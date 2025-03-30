@@ -20,11 +20,11 @@ df = load_data()
 #Remove non used columns
 columns_to_drop = [
     'ID Photos',
-    'test lien vers photos du site de comptage ',
-    'id photo 1',
-    'url sites',
-    'type dimage',
-    'mois annee comptage',
+    'test_lien_vers_photos_du_site_de_comptage_',
+    'id_photo_1',
+    'url_sites',
+    'type_dimage',
+    'mois_annee_comptage',
     "Date d'installation du site de comptage",
     'Lien vers photo du site de comptage',
     'Identifiant technique compteur',
@@ -100,7 +100,7 @@ if page == pages[1]:
     Names and identifiers of the counting sites (`Identifiant du site de comptage`, `Nom du site de comptage`, `Coordonnees géographiques`).
 
   - **Time-based Data**:  
-    Exact timestamps of each measurement (`Date et heure de comptage`, `mois annee comptage`).
+    Exact timestamps of each measurement (`Date et heure de comptage`, `mois_annee_comptage`).
 
   - **Traffic Count**:  
     Number of bicycles recorded per time interval (`Comptage horaire`).
