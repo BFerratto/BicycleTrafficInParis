@@ -17,21 +17,20 @@ page = st.sidebar.radio("Navigate to", pages)
 
 #Load df 
 df = load_data()
-df.columns = df.columns.str.replace(" ", "_")
 #Remove non used columns
 columns_to_drop = [
-    'ID_Photos',
-    'test_lien_vers_photos_du_site_de_comptage_',
-    'id_photo_1',
-    'url_sites',
-    'type_dimage',
-    'mois_annee_comptage',
-    "Date_d'installation_du_site_de_comptage",
-    'Lien_vers_photo_du_site_de_comptage',
-    'Identifiant_technique_compteur',
-    'Identifiant_du_site_de_comptage',
-    'Identifiant_du_compteur',
-    'Nom_du_site_de_comptage'
+    'ID Photos',
+    'test lien vers photos du site de comptage ',
+    'id photo 1',
+    'url sites',
+    'type dimage',
+    'mois annee comptage',
+    "Date d'installation du site de comptage",
+    'Lien vers photo du site de comptage',
+    'Identifiant technique compteur',
+    'Identifiant du site de comptage',
+    'Identifiant du compteur',
+    'Nom du site de comptage'
 ]
 
 # Ensure the columns exist in df_subset before attempting to drop them
@@ -39,10 +38,10 @@ df_dropped = df.drop(columns=[col for col in columns_to_drop if col in df.column
 #Translate column names
 
 column_translation = {
-    "Nom_du_compteur": "Meter Name",
-    "Comptage_horaire": "Hourly Count",
-    "Date_et_heure_de_comptage": "Metering date and time",
-    "Coordonnées_géographiques": "Geographical Coordinates",
+    "Nom du compteur": "Meter Name",
+    "Comptage horaire": "Hourly Count",
+    "Date et heure de comptage": "Metering date and time",
+    "Coordonnées géographiques": "Geographical Coordinates",
 }
 
 df_dropped.rename(columns=column_translation, inplace=True)
@@ -95,16 +94,16 @@ if page == pages[1]:
   The dataset's primary purpose is to track the number of bicycles passing a specific counting station (meters) at a given time. The raw dataset contains **943,512 entries** divided into **16 columns**. Key attributes include:
 
   - **Counter Identification**:  
-    Unique identifiers for each bicycle counter (`Identifiant_du_compteur`, `Nom_du_compteur`).
+    Unique identifiers for each bicycle counter (`Identifiant du compteur`, `Nom du compteur`).
 
   - **Location Information**:  
-    Names and identifiers of the counting sites (`Identifiant_du_site_de_comptage`, `Nom_du_site_de_comptage`, `Coordonnees_géographiques`).
+    Names and identifiers of the counting sites (`Identifiant du site de comptage`, `Nom du site de comptage`, `Coordonnees géographiques`).
 
   - **Time-based Data**:  
-    Exact timestamps of each measurement (`Date_et_heure_de_comptage`, `mois_annee_comptage`).
+    Exact timestamps of each measurement (`Date et heure de comptage`, `mois annee comptage`).
 
   - **Traffic Count**:  
-    Number of bicycles recorded per time interval (`Comptage_horaire`).
+    Number of bicycles recorded per time interval (`Comptage horaire`).
 
   - **Metadata**:  
     Additional attributes such as installation dates, photo links, and image types.
