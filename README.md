@@ -1,4 +1,4 @@
-# BicycleTrafficInParis
+# Bicycle Traffic In Paris
 
 Data set: "comptage_velo_donnees_compteurs.csv"
 Source: opendate.paris.fr
