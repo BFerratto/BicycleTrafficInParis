@@ -4,6 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+@st.cache_data
+def load_data():
+    return pd.read_csv("data/bikes-paris.csv")
+    return df
 
 # Page Title & Sidebar
 st.title("🚲 Analysis of Bicycle Traffic in Paris")
@@ -11,51 +15,50 @@ st.sidebar.title("Contents")
 pages = ["Introduction", "Data Exploration", "Data Visualization","Machine Learning", "Conclusions"]
 page = st.sidebar.radio("Navigate to", pages)
 
-#Load df and standardize
-df= pd.read_csv('data/bikes-paris.csv', sep=';')
+#Load df 
+df = load_data()
 
 if page == pages[0] : 
   st.markdown("""
-        ### Introduction 
+        ### ⭐ Introduction 
         Welcome to our **analysis of bicycle traffic in Paris**. This interactive project guides you through the key steps of exploring urban cycling data—from data collection to visualization and modeling—revealing meaningful insights about biking trends across the city.
         This data set contains detailed records of bicycle traffic in Paris, collected from various automated counters installed across the city. The data is provided as numerical, categorical, and cyclical time-based information about bicycle traffic in Paris as a table as a CSV file. The original language is French.
 """)
-st.dataframe(df.head())
-st.markdown("""
-## 🎯 Objectives
+  st.dataframe(df.head())
+  st.markdown("""
+  ## 🎯 Objectives
 
-The main goal of this analysis is to **understand bicycle traffic patterns in Paris** and extract insights that can support:
+  The main goal of this analysis is to **understand bicycle traffic patterns in Paris** and extract insights that can support:
 
-- Urban mobility planning  
-- Policy-making  
-- Infrastructure development  
+  - Urban mobility planning  
+  - Policy-making  
+  - Infrastructure development  
 
-The period from **October 2023 to September 2024** was extracted from the dataset `"comptage_velo_donnees_compteurs.csv"` and analyzed for bicycle traffic behavior.
+  The period from **October 2023 to September 2024** was extracted from the dataset `"comptage_velo_donnees_compteurs.csv"` and analyzed for bicycle traffic behavior.
 
-The analysis aims to:
+  The analysis aims to:
 
-- Map high and low bicycle traffic areas across Paris
-- Explore traffic volume over different time periods (hours, days, months)
-- Support safety improvements and bike station placement strategies
-- Evaluate infrastructure needs for traffic redistribution and maintenance
+  - Map high and low bicycle traffic areas across Paris
+  - Explore traffic volume over different time periods (hours, days, months)
+  - Support safety improvements and bike station placement strategies
+  - Evaluate infrastructure needs for traffic redistribution and maintenance
 
-The focus is on the **‘Hourly count’** variable, which is linked to specific meters and locations. Time and date are strong influencing factors, making temporal analysis essential.
+  The focus is on the **‘Hourly count’** variable, which is linked to specific meters and locations. Time and date are strong influencing factors, making temporal analysis essential.
 
-### Specific Objectives:
+  ### Specific Objectives:
 
-- ✅ Check the applicability of Machine Learning algorithms to the dataset  
-- ✅ Analyze daily cycling trends to identify overall usage patterns  
-- ✅ Examine fluctuations across different timeframes (daily, weekly, monthly, seasonal)  
-- ✅ Compare traffic flow on similar paths in opposite directions to detect imbalances  
+  - ✅ Check the applicability of Machine Learning algorithms to the dataset  
+  - ✅ Analyze daily cycling trends to identify overall usage patterns  
+  - ✅ Examine fluctuations across different timeframes (daily, weekly, monthly, seasonal)  
+  - ✅ Compare traffic flow on similar paths in opposite directions to detect imbalances  
 
-By studying these factors, this analysis aims to contribute to more efficient **urban planning**, **sustainable transportation**, and **cycling infrastructure improvements** in Paris.          
-     
+  By studying these factors, this analysis aims to contribute to more efficient **urban planning**, **sustainable transportation**, and **cycling infrastructure improvements** in Paris.          
+      
     """)
 
 if page == pages[1]:
     st.write('### 🔍 Exploration & Description')
     st.markdown("""
-    ## 🔍 Exploration & Description
 
 This dataset contains detailed records of bicycle traffic in Paris, collected from various automated counters installed across the city. The data is provided in numerical, categorical, and cyclical time-based formats and is stored as a CSV file. The original language of the data is French.
 
@@ -95,18 +98,28 @@ The dataset's primary purpose is to track the number of bicycles passing a speci
 15. Image type  
 16. Month year count  
 
+**Pre-processing**
+
+Initially, unnecessary columns were removed to streamline the dataset. Then, column names were translated into English to enhance readability and usability. After that, the period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
+
+Two extreme values of „Hourly count“ (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
+
 """)
    
 if page == pages[2] :
-  st.write("### Data Visualization")
-  
+  st.write("### 📈 Data Visualization")
+  st.markdown("""
+     
+              """)
 if page == pages[3] :
-  st.write("### Machine Learning")
-  
+  st.write("### ⚙️ Machine Learning")
+  st.markdown("""
+     
+              """)
 if page == pages[4] :
 
     st.markdown("""
-        ### **Conclusion & Key Recommendations**  
+        ### 🧐**Conclusion & Key Recommendations**  
 
         The merged insights suggest that combining temporal modeling of traffic volumes with spatial-directional analysis offers a fuller picture of Parisian cycling behavior, enabling data-driven improvements for sustainable urban mobility.  
         ### **Evaluations**        
