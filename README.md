@@ -6,6 +6,7 @@ Source: opendate.paris.fr
 # Requirements
 streamlit
 git lfs install
+!! add the dataset in the folder data!!
 
 # Run
 streamlit run streamlit_app.py

@@ -6,7 +6,7 @@ import seaborn as sns
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/bikes-paris.csv")
+    return pd.read_csv("data/bikes-paris.csv", sep=';')
     return df
 
 # Page Title & Sidebar
@@ -17,7 +17,35 @@ page = st.sidebar.radio("Navigate to", pages)
 
 #Load df 
 df = load_data()
+df.columns = df.columns.str.replace(" ", "_")
+#Remove non used columns
+columns_to_drop = [
+    'ID_Photos',
+    'test_lien_vers_photos_du_site_de_comptage_',
+    'id_photo_1',
+    'url_sites',
+    'type_dimage',
+    'mois_annee_comptage',
+    "Date_d'installation_du_site_de_comptage",
+    'Lien_vers_photo_du_site_de_comptage',
+    'Identifiant_technique_compteur',
+    'Identifiant_du_site_de_comptage',
+    'Identifiant_du_compteur',
+    'Nom_du_site_de_comptage'
+]
 
+# Ensure the columns exist in df_subset before attempting to drop them
+df_dropped = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
+#Translate column names
+
+column_translation = {
+    "Nom_du_compteur": "Meter Name",
+    "Comptage_horaire": "Hourly Count",
+    "Date_et_heure_de_comptage": "Metering date and time",
+    "Coordonnées_géographiques": "Geographical Coordinates",
+}
+
+df_dropped.rename(columns=column_translation, inplace=True)
 if page == pages[0] : 
   st.markdown("""
         ### ⭐ Introduction 
@@ -25,6 +53,7 @@ if page == pages[0] :
         This data set contains detailed records of bicycle traffic in Paris, collected from various automated counters installed across the city. The data is provided as numerical, categorical, and cyclical time-based information about bicycle traffic in Paris as a table as a CSV file. The original language is French.
 """)
   st.dataframe(df.head())
+
   st.markdown("""
   ## 🎯 Objectives
 
@@ -55,57 +84,60 @@ if page == pages[0] :
   By studying these factors, this analysis aims to contribute to more efficient **urban planning**, **sustainable transportation**, and **cycling infrastructure improvements** in Paris.          
       
     """)
-
+# standardize column names
+  
 if page == pages[1]:
     st.write('### 🔍 Exploration & Description')
     st.markdown("""
 
-This dataset contains detailed records of bicycle traffic in Paris, collected from various automated counters installed across the city. The data is provided in numerical, categorical, and cyclical time-based formats and is stored as a CSV file. The original language of the data is French.
+  This dataset contains detailed records of bicycle traffic in Paris, collected from various automated counters installed across the city. The data is provided in numerical, categorical, and cyclical time-based formats and is stored as a CSV file. The original language of the data is French.
 
-The dataset's primary purpose is to track the number of bicycles passing a specific counting station (meters) at a given time. The raw dataset contains **943,512 entries** divided into **16 columns**. Key attributes include:
+  The dataset's primary purpose is to track the number of bicycles passing a specific counting station (meters) at a given time. The raw dataset contains **943,512 entries** divided into **16 columns**. Key attributes include:
 
-- **Counter Identification**:  
-  Unique identifiers for each bicycle counter (`Identifiant_du_compteur`, `Nom_du_compteur`).
+  - **Counter Identification**:  
+    Unique identifiers for each bicycle counter (`Identifiant_du_compteur`, `Nom_du_compteur`).
 
-- **Location Information**:  
-  Names and identifiers of the counting sites (`Identifiant_du_site_de_comptage`, `Nom_du_site_de_comptage`, `Coordonnees_géographiques`).
+  - **Location Information**:  
+    Names and identifiers of the counting sites (`Identifiant_du_site_de_comptage`, `Nom_du_site_de_comptage`, `Coordonnees_géographiques`).
 
-- **Time-based Data**:  
-  Exact timestamps of each measurement (`Date_et_heure_de_comptage`, `mois_annee_comptage`).
+  - **Time-based Data**:  
+    Exact timestamps of each measurement (`Date_et_heure_de_comptage`, `mois_annee_comptage`).
 
-- **Traffic Count**:  
-  Number of bicycles recorded per time interval (`Comptage_horaire`).
+  - **Traffic Count**:  
+    Number of bicycles recorded per time interval (`Comptage_horaire`).
 
-- **Metadata**:  
-  Additional attributes such as installation dates, photo links, and image types.
+  - **Metadata**:  
+    Additional attributes such as installation dates, photo links, and image types.
 
-**Renamed English Columns**:
+  **Renamed English Columns**:
 
-1. Meter identifier  
-2. Meter name  
-3. Metering site identifier  
-4. Name of metering site  
-5. Hourly count  
-6. Metering date and time  
-7. Metering site installation date  
-8. Link to photo of metering site  
-9. Geographical coordinates  
-10. Technical meter identifier  
-11. Photo ID  
-12. Test link to photos of counting site  
-13. ID photo 1  
-14. URL website  
-15. Image type  
-16. Month year count  
+  1. Meter identifier  
+  2. Meter name  
+  3. Metering site identifier  
+  4. Name of metering site  
+  5. Hourly count  
+  6. Metering date and time  
+  7. Metering site installation date  
+  8. Link to photo of metering site  
+  9. Geographical coordinates  
+  10. Technical meter identifier  
+  11. Photo ID  
+  12. Test link to photos of counting site  
+  13. ID photo 1  
+  14. URL website  
+  15. Image type  
+  16. Month year count  
 
-**Pre-processing**
+  **Pre-processing**
 
-Initially, unnecessary columns were removed to streamline the dataset. Then, column names were translated into English to enhance readability and usability. After that, the period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
+  Initially, unnecessary columns were removed to streamline the dataset. Then, column names were translated into English to enhance readability and usability. After that, the period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
 
-Two extreme values of „Hourly count“ (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
+  Two extreme values of „Hourly count“ (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
 
-""")
-   
+  Columns maintained:
+  """)
+    st.dataframe(df_dropped.columns)
+
 if page == pages[2] :
   st.write("### 📈 Data Visualization")
   st.markdown("""
