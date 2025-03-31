@@ -5,10 +5,15 @@ import plotly.express as px
 from PIL import Image
 
 
+
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/df_processed.csv", sep=',')
-    return df
+    url = "https://drive.google.com/uc?id=1HvzJ9o3_jMQ64tAP8WS9y5iFjD_tWsvb"
+    return pd.read_csv(url)
+
+df = load_data()
+st.success("Dataset loaded from Google Drive!")
+st.dataframe(df.head())
 
 # Page Title & Sidebar
 st.title("🚲 Analysis of Bicycle Traffic in Paris")
@@ -16,8 +21,6 @@ st.sidebar.title("Contents")
 pages = ["Introduction", "Data Exploration", "Data Visualization","Machine Learning", "Conclusions"]
 page = st.sidebar.radio("Navigate to", pages)
 
-#Load df 
-df = load_data()
 df.columns=df.columns.str.strip().str.lower().str.replace(" ", "_")
 
 if page == pages[0] : 

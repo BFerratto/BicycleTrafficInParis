@@ -4,4 +4,3 @@ PIL
 plotly
 pandas
 numpy
-matplotlib
