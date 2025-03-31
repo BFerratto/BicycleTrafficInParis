@@ -6,12 +6,15 @@ from PIL import Image
 
 
 
+st.write("Loading data from Google Drive...")
+
 @st.cache_data
 def load_data():
-    url = "https://drive.google.com/uc?id=1HvzJ9o3_jMQ64tAP8WS9y5iFjD_tWsvb"
+    url = "https://www.dropbox.com/scl/fi/1lxs8tbcmuttomutqb0ib/df_processed.csv?rlkey=p119wap7h05ynwjq7ryjh0qpm&st=y46ffwem&dl=1"
     return pd.read_csv(url)
 
 df = load_data()
+
 
 # Page Title & Sidebar
 st.title("🚲 Analysis of Bicycle Traffic in Paris")
