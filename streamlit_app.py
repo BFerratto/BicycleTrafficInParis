@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import matplotlib.pyplot as plt
 
 
 @st.cache_data
@@ -126,7 +125,9 @@ if page == pages[2] :
               To gain an initial understanding of bicycle behavior:
 
               - Daily traffic trends revealed a significant drop in weekend cycling, consistent with reduced commuting.
-
+              """)
+  
+  st.markdown(""" 
               - Seasonal traffic analysis showed summer months experiencing over twice the volume of winter, reinforcing weather's influence on biking behavior.
 
               - Monthly trends highlighted a dip in August due to holiday periods.
@@ -135,21 +136,28 @@ if page == pages[2] :
               """)
   # DEBUG 
   # st.write("Columns:", df.columns.tolist())
+  # Sort the DataFrame
   df_sorted = df.sort_values("difference", ascending=False)
+
   # Streamlit title and description
   st.title("Directional Traffic Imbalance per Route")
   st.write("This chart highlights the differences in bicycle traffic between directions on key routes in Paris.")
 
-  # Plot
-  fig, ax = plt.subplots(figsize=(10, 6))
-  ax.barh(df_sorted["base_route"], df_sorted["difference"], color="skyblue")
-  ax.set_xlabel("Traffic Difference (Absolute)")
-  ax.set_ylabel("Route")
-  ax.set_title("Directional Flow Imbalance")
-  ax.invert_yaxis()
+  # Plot using Plotly Express
+  fig = px.bar(
+      df_sorted,
+      x="difference",
+      y="base_route",
+      orientation="h",
+      title="Directional Flow Imbalance",
+      labels={"difference": "Traffic Difference (Absolute)", "base_route": "Route"},
+  )
 
-  # Show the plot
-  st.pyplot(fig)
+  # Reverse y-axis to match original plot style
+  fig.update_layout(yaxis=dict(autorange="reversed"))
+
+  # Show the plot in Streamlit
+  st.plotly_chart(fig, use_container_width=True)
 
   st.markdown("""
 
