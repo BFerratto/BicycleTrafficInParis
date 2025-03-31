@@ -125,7 +125,7 @@ if page == pages[1]:
 
                   Columns maintained:
       """)
-    st.dataframe(df_dropped.columns)
+    st.dataframe(df.columns)
 
 if page == pages[2] :
   st.write("### 📈 Data Visualization")
