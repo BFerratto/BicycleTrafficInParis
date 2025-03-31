@@ -9,7 +9,7 @@ from PIL import Image
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/bikes-paris.csv", sep=';')
+    return pd.read_csv("data/bikes-paris.csv", sep=';', usecols=["Nom du compteur","Comptage horaire","Date et heure de comptage","Coordonnées géographiques","mois_annee_comptage","Identifiant technique compteur"])
     return df
 
 # Page Title & Sidebar
@@ -20,34 +20,17 @@ page = st.sidebar.radio("Navigate to", pages)
 
 #Load df 
 df = load_data()
-#Remove non used columns
-columns_to_drop = [
-    'ID Photos',
-    'test_lien_vers_photos_du_site_de_comptage_',
-    'id_photo_1',
-    'url_sites',
-    'type_dimage',
-    'mois_annee_comptage',
-    "Date d'installation du site de comptage",
-    'Lien vers photo du site de comptage',
-    'Identifiant technique compteur',
-    'Identifiant du site de comptage',
-    'Identifiant du compteur',
-    'Nom du site de comptage'
-]
-
-# Ensure the columns exist in df_subset before attempting to drop them
-df_dropped = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
-#Translate column names
 
 column_translation = {
     "Nom du compteur": "Meter Name",
     "Comptage horaire": "Hourly Count",
     "Date et heure de comptage": "Metering date and time",
     "Coordonnées géographiques": "Geographical Coordinates",
+    "mois_annee_comptage":"Month year count",
+    "Identifiant technique compteur":"Technical meter identifier"
 }
 
-df_dropped.rename(columns=column_translation, inplace=True)
+df.rename(columns=column_translation, inplace=True)
 if page == pages[0] : 
   st.markdown("""
         ### ⭐ Introduction 
@@ -58,10 +41,9 @@ if page == pages[0] :
 
       
 
-  df.columns = ['Meter identifier', 'Meter name', 'Metering site identifier', 'Name of metering site', 'Hourly count', 
-                  'Metering date and time', 'Metering site installation date', 'Link to photo of metering site', 
-                  'Geographical coordinates', 'Technical meter identifier', 'Photo ID', 'test link to photos of counting site', 
-                  'ID photo 1', 'URL website', 'Image type', 'Month year count']
+  df.columns = ['Meter name','Hourly count', 
+                  'Metering date and time', 
+                  'Geographical coordinates', 'Technical meter identifier', 'Month year count']
 
   # OKTOBER 2023 BIS SEPTEMBER 2024
   MAP_select_2324 = ['2023-10', '2023-11', '2023-12', '2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06', '2024-07', '2024-08', '2024-09']
