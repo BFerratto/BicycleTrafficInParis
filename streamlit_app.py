@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
+from plotly.subplots import make_subplots
+from PIL import Image
 
 @st.cache_data
 def load_data():
@@ -50,7 +53,61 @@ if page == pages[0] :
         ### ⭐ Introduction 
         Paris has made significant strides toward becoming a more bike-friendly city. As urban planners and policymakers aim to optimize infrastructure and promote sustainable mobility, understanding bicycle traffic patterns is essential. This project analyzes bicycle traffic data collected from automated counters across Paris with a dual focus: evaluating general hourly traffic volumes and identifying imbalances in directional flow across routes.
         """)
+  st.subheader("Bicycle traffic map")
 
+
+      
+
+  df.columns = ['Meter identifier', 'Meter name', 'Metering site identifier', 'Name of metering site', 'Hourly count', 
+                  'Metering date and time', 'Metering site installation date', 'Link to photo of metering site', 
+                  'Geographical coordinates', 'Technical meter identifier', 'Photo ID', 'test link to photos of counting site', 
+                  'ID photo 1', 'URL website', 'Image type', 'Month year count']
+
+  # OKTOBER 2023 BIS SEPTEMBER 2024
+  MAP_select_2324 = ['2023-10', '2023-11', '2023-12', '2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06', '2024-07', '2024-08', '2024-09']
+  df_1023_0924 = df[df['Month year count'].str.contains('|'.join(MAP_select_2324))]
+  MAP_one_year = df_1023_0924
+
+  # Removing of the two outliers
+  MAP_one_year = MAP_one_year[MAP_one_year['Hourly count'] != 8190]
+  MAP_one_year = MAP_one_year[MAP_one_year['Hourly count'] != 2047]
+
+  filtered_meterIDs = MAP_one_year.drop_duplicates(subset='Technical meter identifier')
+  tecID_geo = filtered_meterIDs[['Technical meter identifier', 'Geographical coordinates']]
+  Latitudes = tecID_geo['Geographical coordinates'].apply(lambda b: b.split(',')[0])
+  Longitudes = tecID_geo['Geographical coordinates'].apply(lambda l: l.split(',')[1])
+  lat_lon = pd.DataFrame({'Latitude': Latitudes, 'Longitude': Longitudes})
+  df_tecID_geo = pd.concat([tecID_geo, lat_lon], axis=1)
+  df_tecID_geo = df_tecID_geo.drop(columns=['Geographical coordinates'])
+  df_tecID_geo = df_tecID_geo.rename(columns={'Technical meter identifier': 'Meter ID (technical)'})
+  df_tecID_geo = df_tecID_geo.reset_index(drop=True)
+  df_tecID_geo['Latitude'] = df_tecID_geo['Latitude'].astype(float)
+  df_tecID_geo['Longitude'] = df_tecID_geo['Longitude'].astype(float)
+  summed_counts = MAP_one_year.groupby('Technical meter identifier')['Hourly count'].sum().reset_index()
+  summed_counts = summed_counts.rename(columns={'Technical meter identifier': 'Meter ID (technical)'})
+  summed_counts.reset_index(drop=True)
+  merged_df = df_tecID_geo.merge(summed_counts[['Meter ID (technical)', 'Hourly count']], on='Meter ID (technical)', how='left')
+  merged_df['Hourly count'] = merged_df['Hourly count'].fillna(0)
+  df_MAP = merged_df.rename(columns={'Hourly count': 'Total counts'})
+
+  # Plotly
+  fig = px.scatter_mapbox(
+      df_MAP,
+      lat='Latitude',
+      lon='Longitude',
+      hover_name='Meter ID (technical)', 
+      color='Total counts',
+      size='Total counts',
+      size_max=14,
+      color_continuous_scale=px.colors.sequential.Plasma,
+      zoom=11,        
+      mapbox_style="carto-positron")
+
+  fig.update_layout(title='Counter locations in Paris recording the number of bycicles from October 2023 up to September 2024', width=1000, height=600,
+                  coloraxis_colorbar=dict(title="Total counts"))
+
+  # Anzeige des Diagramms in Streamlit
+  st.plotly_chart(fig)
   st.markdown("""
         ## 🎯 Objectives
 
@@ -67,24 +124,23 @@ if page == pages[0] :
       - ✅ Provide actionable recommendations for infrastructure planning and bike-sharing strategies.
         
     """)
-# standardize column names
   
 if page == pages[1]:
     st.write('### 🔍 Exploration & Description')
     st.markdown("""
                 The dataset, sourced from opendata.paris.fr, consists of over 940,000 entries covering October 2023 to September 2024. It includes information on:
 
-                  - Bicycle count per hour (Comptage_horaire)
+                  - Bicycle count per hour (`Comptage horaire`)
 
                   - Meter location and identifiers
 
-                  - Timestamp (Date_et_heure_de_comptage)
+                  - Timestamp (`Date et heure de comptage`)
 
                   - Geographic coordinates
 
                   - Metadata (e.g., photo links, installation dates)
 
-                After translation from French and cleaning, 16 columns were retained, providing temporal, spatial, and categorical features relevant to understanding traffic patterns. Columns like "Metering site installation date" and redundant photo identifiers were removed to enhance processing efficiency.
+                After translation from French and cleaning, 16 columns were retained, providing temporal, spatial, and categorical features relevant to understanding traffic patterns. Columns like `Metering site installation date` and redundant photo identifiers were removed to enhance processing efficiency.
 
 
 
@@ -93,7 +149,7 @@ if page == pages[1]:
 
                   The period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
 
-                  Two extreme values of „Hourly count“ (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
+                  Two extreme values of `Hourly count` (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
 
                   Columns maintained:
       """)
@@ -152,45 +208,42 @@ if page == pages[3] :
 
                 **Feature Importance**
 
-                - Time-based variables, especially "hour," strongly influenced prediction accuracy.
+                - Time-based variables, especially `hour`, strongly influenced prediction accuracy.
 
 
       
                 """)
-    if col2.button("For Directional Flow and Route-Level Imbalance Analysis"):
-        st.markdown("""
-                    **2. Directional Flow Difference Prediction**
+  if col2.button("For Directional Flow and Route-Level Imbalance Analysis"):
+      st.markdown("""
+                  **2. Directional Flow Difference Prediction**
 
-                    - Goal: Predict the difference in traffic volume between opposite directions on the same route.
+                  - Goal: Predict the difference in traffic volume between opposite directions on the same route.
 
-                    - Models: RandomForestRegressor and Linear Regression
+                  - Models: RandomForestRegressor and Linear Regression
 
-                    **Preprocessing:**
+                  **Preprocessing:**
 
-                    - Split Counter Name into Base Route and Direction
+                  - Split Counter Name into Base Route and Direction
 
-                    - Retained only routes with valid bidirectional data
+                  - Retained only routes with valid bidirectional data
 
-                    - Created a new feature Difference
+                  - Created a new feature Difference
 
-                    **Results:**
+                  **Results:**
 
-                    - Random Forest achieved an R² of 0.82, significantly outperforming Linear Regression (R² = 0.40).
+                  - Random Forest achieved an R² of 0.82, significantly outperforming Linear Regression (R² = 0.40).
 
-                    - MAE and RMSE were less than half of those for Linear Regression.
+                  - MAE and RMSE were less than half of those for Linear Regression.
 
-                    **Feature Importance:** 
+                  **Feature Importance:** 
 
-                    - "Hourly count" (Comptage horaire), hour of day, and coordinates were most influential.
-                    """)
+                  - `Hourly count` (`Comptage horaire`), hour of day, and coordinates were most influential.
+                  """)
 if page == pages[4] :
 
     st.markdown("""
-        ### 🧐**Conclusion & Key Recommendations**  
-
-        Conclusion
-
-        General Insights
+        ### 🧐 **Conclusion & Key Recommendations**  
+                
         Bicycle usage in Paris is highly time-sensitive and season-dependent. Traffic peaks during weekdays and warm months, while installation data helps schedule meter maintenance and assess city investment in cycling infrastructure.
 
         ### **Evaluations**        
