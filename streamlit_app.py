@@ -1,11 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import plotly.express as px
-from plotly.subplots import make_subplots
-from PIL import Image
 
 @st.cache_data
 def load_data():
