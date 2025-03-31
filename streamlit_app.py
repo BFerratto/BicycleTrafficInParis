@@ -105,7 +105,7 @@ if page == pages[1]:
 
                   - Metadata (e.g., photo links, installation dates)
 
-                After translation from French and cleaning, 16 columns were retained, providing temporal, spatial, and categorical features relevant to understanding traffic patterns. Columns like `Metering site installation date` and redundant photo identifiers were removed to enhance processing efficiency.
+                After translation from French and cleaning, 16 columns were retained, providing temporal, spatial, and categorical features relevant to understanding traffic patterns. Columns like `metering_site_installation_date` and redundant photo identifiers were removed to enhance processing efficiency.
 
 
 
@@ -114,7 +114,7 @@ if page == pages[1]:
 
                   The period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
 
-                  Two extreme values of `Hourly count` (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
+                  Two extreme values of `hourly_count` (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
 
                   Columns maintained:
       """)
@@ -135,7 +135,8 @@ if page == pages[2] :
 
               Additional visualizations focused on directional flow differences:
               """)
-  # DEBUG st.write("Columns:", df.columns.tolist())
+  # DEBUG 
+  # st.write("Columns:", df.columns.tolist())
   df_sorted = df.sort_values("difference", ascending=False)
   # Streamlit title and description
   st.title("Directional Traffic Imbalance per Route")
@@ -154,9 +155,9 @@ if page == pages[2] :
 
   st.markdown("""
 
-              - High-imbalance routes, such as Rue Turbigo and Quai de la Tournelle, exhibited strong directional biases.
+              - High-imbalance routes, such as **Rue Turbigo** and **Quai de la Tournelle**, exhibited strong directional biases.
 
-              - Balanced routes, like Pont National, suggested symmetric flow, potentially due to bridge-based commutes.
+              - Balanced routes, like **Pont National**, suggested symmetric flow, potentially due to bridge-based commutes.
 
               """)
 if page == pages[3] :
@@ -221,7 +222,7 @@ if page == pages[3] :
 
                   **Feature Importance:** 
 
-                  - `Hourly count` (`Comptage horaire`), hour of day, and coordinates were most influential.
+                  - `hourly_count` (`Comptage horaire`), hour of day, and coordinates were most influential.
                   """)
 if page == pages[4] :
 
