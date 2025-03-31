@@ -5,9 +5,6 @@ import plotly.express as px
 from PIL import Image
 
 
-
-st.write("Loading data from Google Drive...")
-
 @st.cache_data
 def load_data():
     url = "https://www.dropbox.com/scl/fi/1lxs8tbcmuttomutqb0ib/df_processed.csv?rlkey=p119wap7h05ynwjq7ryjh0qpm&st=y46ffwem&dl=1"
