@@ -2,10 +2,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import matplotlib.pyplot as plt
+
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/df_used_cols.csv", sep=',')
+    return pd.read_csv("data/df_processed.csv", sep=',')
     return df
 
 # Page Title & Sidebar
@@ -16,16 +18,8 @@ page = st.sidebar.radio("Navigate to", pages)
 
 #Load df 
 df = load_data()
+df.columns=df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-column_translation = {
-    "Nom_du_compteur": "Meter Name",
-    "Comptage_horaire": "Hourly Count",
-    "Date_et_heure_de_comptage": "Metering date and time",
-    "Coordonnées_géographiques": "Geographical Coordinates",
-    "Identifiant_technique_compteur":"Technical meter identifier"
-}
-
-df.rename(columns=column_translation, inplace=True)
 if page == pages[0] : 
   st.markdown("""
         ### ⭐ Introduction 
@@ -33,49 +27,48 @@ if page == pages[0] :
         """)
   st.subheader("Bicycle traffic map")
 
-  df.columns = ['Meter name','Hourly count','Metering date and time','Geographical coordinates', 'Technical meter identifier', 'Month year count']
 
   # OKTOBER 2023 BIS SEPTEMBER 2024
-  MAP_select_2324 = ['2023-10', '2023-11', '2023-12', '2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06', '2024-07', '2024-08', '2024-09']
-  df_1023_0924 = df[df['Month year count'].str.contains('|'.join(MAP_select_2324))]
+  MAP_select_2324 = ["2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09"]
+  df_1023_0924 = df[df["month_year_count"].str.contains("|".join(MAP_select_2324))]
   MAP_one_year = df_1023_0924
-
   # Removing of the two outliers
-  MAP_one_year = MAP_one_year[MAP_one_year['Hourly count'] != 8190]
-  MAP_one_year = MAP_one_year[MAP_one_year['Hourly count'] != 2047]
+  MAP_one_year = MAP_one_year[MAP_one_year["hourly_count"] != 8190]
+  MAP_one_year = MAP_one_year[MAP_one_year["hourly_count"] != 2047]
 
-  filtered_meterIDs = MAP_one_year.drop_duplicates(subset='Technical meter identifier')
-  tecID_geo = filtered_meterIDs[['Technical meter identifier', 'Geographical coordinates']]
-  Latitudes = tecID_geo['Geographical coordinates'].apply(lambda b: b.split(',')[0])
-  Longitudes = tecID_geo['Geographical coordinates'].apply(lambda l: l.split(',')[1])
-  lat_lon = pd.DataFrame({'Latitude': Latitudes, 'Longitude': Longitudes})
+  filtered_meterIDs = MAP_one_year.drop_duplicates(subset="technical_meter_identifier")
+  tecID_geo = filtered_meterIDs[["technical_meter_identifier", "geographical_coordinates"]]
+  Latitudes = tecID_geo["geographical_coordinates"].apply(lambda b: b.split(',')[0])
+  Longitudes = tecID_geo["geographical_coordinates"].apply(lambda l: l.split(',')[1])
+  lat_lon = pd.DataFrame({"latitude": Latitudes, "longitude": Longitudes})
   df_tecID_geo = pd.concat([tecID_geo, lat_lon], axis=1)
-  df_tecID_geo = df_tecID_geo.drop(columns=['Geographical coordinates'])
-  df_tecID_geo = df_tecID_geo.rename(columns={'Technical meter identifier': 'Meter ID (technical)'})
+  df_tecID_geo = df_tecID_geo.drop(columns=["geographical_coordinates"])
+  df_tecID_geo = df_tecID_geo.rename(columns={"technical_meter_identifier": "Meter ID (technical)"})
   df_tecID_geo = df_tecID_geo.reset_index(drop=True)
-  df_tecID_geo['Latitude'] = df_tecID_geo['Latitude'].astype(float)
-  df_tecID_geo['Longitude'] = df_tecID_geo['Longitude'].astype(float)
-  summed_counts = MAP_one_year.groupby('Technical meter identifier')['Hourly count'].sum().reset_index()
-  summed_counts = summed_counts.rename(columns={'Technical meter identifier': 'Meter ID (technical)'})
+  df_tecID_geo["latitude"] = df_tecID_geo["latitude"].astype(float)
+  df_tecID_geo["longitude"] = df_tecID_geo["longitude"].astype(float)
+  summed_counts = MAP_one_year.groupby("technical_meter_identifier")["hourly_count"].sum().reset_index()
+  summed_counts = summed_counts.rename(columns={"technical_meter_identifier": "Meter ID (technical)"})
   summed_counts.reset_index(drop=True)
-  merged_df = df_tecID_geo.merge(summed_counts[['Meter ID (technical)', 'Hourly count']], on='Meter ID (technical)', how='left')
-  merged_df['Hourly count'] = merged_df['Hourly count'].fillna(0)
-  df_MAP = merged_df.rename(columns={'Hourly count': 'Total counts'})
+  merged_df = df_tecID_geo.merge(summed_counts[["Meter ID (technical)", "hourly_count"]], on="Meter ID (technical)", how='left')
+  merged_df["hourly_count"] = merged_df["hourly_count"].fillna(0)
+  df_MAP = merged_df.rename(columns={"hourly_count": "Total counts"})
 
   # Plotly
   fig = px.scatter_mapbox(
       df_MAP,
-      lat='Latitude',
-      lon='Longitude',
-      hover_name='Meter ID (technical)', 
-      color='Total counts',
-      size='Total counts',
+      lat="latitude",
+      lon="longitude",
+      hover_name="Meter ID (technical)", 
+      color="Total counts",
+      size="Total counts",
       size_max=14,
       color_continuous_scale=px.colors.sequential.Plasma,
       zoom=11,        
       mapbox_style="carto-positron")
 
   fig.update_layout(title='Counter locations in Paris recording the number of bycicles from October 2023 up to September 2024', width=1000, height=600,
+
                   coloraxis_colorbar=dict(title="Total counts"))
 
   # Anzeige des Diagramms in Streamlit
@@ -125,7 +118,7 @@ if page == pages[1]:
 
                   Columns maintained:
       """)
-    st.dataframe(df.columns)
+    st.dataframe(df.columns[:6])
 
 if page == pages[2] :
   st.write("### 📈 Data Visualization")
@@ -141,6 +134,25 @@ if page == pages[2] :
               - Meter installations over time pointed to spikes in 2018 and 2019, indicating strategic expansion phases.
 
               Additional visualizations focused on directional flow differences:
+              """)
+  # DEBUG st.write("Columns:", df.columns.tolist())
+  df_sorted = df.sort_values("difference", ascending=False)
+  # Streamlit title and description
+  st.title("Directional Traffic Imbalance per Route")
+  st.write("This chart highlights the differences in bicycle traffic between directions on key routes in Paris.")
+
+  # Plot
+  fig, ax = plt.subplots(figsize=(10, 6))
+  ax.barh(df_sorted["base_route"], df_sorted["difference"], color="skyblue")
+  ax.set_xlabel("Traffic Difference (Absolute)")
+  ax.set_ylabel("Route")
+  ax.set_title("Directional Flow Imbalance")
+  ax.invert_yaxis()
+
+  # Show the plot
+  st.pyplot(fig)
+
+  st.markdown("""
 
               - High-imbalance routes, such as Rue Turbigo and Quai de la Tournelle, exhibited strong directional biases.
 
