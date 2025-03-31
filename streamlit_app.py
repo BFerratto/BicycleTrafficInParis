@@ -131,8 +131,6 @@ if page == pages[2] :
 
               - Monthly trends highlighted a dip in August due to holiday periods.
 
-              - Meter installations over time pointed to spikes in 2018 and 2019, indicating strategic expansion phases.
-
               Additional visualizations focused on directional flow differences:
               """)
   # DEBUG 
