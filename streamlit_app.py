@@ -12,8 +12,6 @@ def load_data():
     return pd.read_csv(url)
 
 df = load_data()
-st.success("Dataset loaded from Google Drive!")
-st.dataframe(df.head())
 
 # Page Title & Sidebar
 st.title("🚲 Analysis of Bicycle Traffic in Paris")
