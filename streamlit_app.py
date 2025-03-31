@@ -9,7 +9,7 @@ from PIL import Image
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/bikes-paris.csv", sep=';', usecols=["Nom du compteur","Comptage horaire","Date et heure de comptage","Coordonnées géographiques","mois_annee_comptage","Identifiant technique compteur"])
+    return pd.read_csv("data/df_used_cols.csv", sep=',')
     return df
 
 # Page Title & Sidebar
@@ -22,12 +22,11 @@ page = st.sidebar.radio("Navigate to", pages)
 df = load_data()
 
 column_translation = {
-    "Nom du compteur": "Meter Name",
-    "Comptage horaire": "Hourly Count",
-    "Date et heure de comptage": "Metering date and time",
-    "Coordonnées géographiques": "Geographical Coordinates",
-    "mois_annee_comptage":"Month year count",
-    "Identifiant technique compteur":"Technical meter identifier"
+    "Nom_du_compteur": "Meter Name",
+    "Comptage_horaire": "Hourly Count",
+    "Date_et_heure_de_comptage": "Metering date and time",
+    "Coordonnées_géographiques": "Geographical Coordinates",
+    "Identifiant_technique_compteur":"Technical meter identifier"
 }
 
 df.rename(columns=column_translation, inplace=True)
@@ -38,12 +37,7 @@ if page == pages[0] :
         """)
   st.subheader("Bicycle traffic map")
 
-
-      
-
-  df.columns = ['Meter name','Hourly count', 
-                  'Metering date and time', 
-                  'Geographical coordinates', 'Technical meter identifier', 'Month year count']
+  df.columns = ['Meter name','Hourly count','Metering date and time','Geographical coordinates', 'Technical meter identifier', 'Month year count']
 
   # OKTOBER 2023 BIS SEPTEMBER 2024
   MAP_select_2324 = ['2023-10', '2023-11', '2023-12', '2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06', '2024-07', '2024-08', '2024-09']
