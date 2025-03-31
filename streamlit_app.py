@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from PIL import Image
 
 
 @st.cache_data
@@ -21,7 +22,14 @@ df.columns=df.columns.str.strip().str.lower().str.replace(" ", "_")
 
 if page == pages[0] : 
   st.markdown("""
-        ### ⭐ Introduction 
+        ### ⭐ Introduction & City Map
+        """)
+  # Lokales Bild laden
+  image = Image.open("img/bikepic.jpg")
+
+  # Bild zentrieren
+  st.image(image, use_column_width=True)
+  st.markdown("""
         Paris has made significant strides toward becoming a more bike-friendly city. As urban planners and policymakers aim to optimize infrastructure and promote sustainable mobility, understanding bicycle traffic patterns is essential. This project analyzes bicycle traffic data collected from automated counters across Paris with a dual focus: evaluating general hourly traffic volumes and identifying imbalances in directional flow across routes.
         """)
   st.subheader("Bicycle traffic map")
