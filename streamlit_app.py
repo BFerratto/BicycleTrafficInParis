@@ -340,9 +340,9 @@ if page == pages[3] :
 
 
       # Updated Dropbox URLs (with ?dl=1)
-      lr_url = "https://www.dropbox.com/scl/fi/dagcwzr3c02xh6oyqbmbt/lr_model.joblib?rlkey=ltpvbopvskvtqpbclug8h6nxo&st=v9h5vkj0&dl=1"
+      lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
+      test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
       rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model.joblib"
-      test_data_url = "https://www.dropbox.com/scl/fi/d2cjp01ni6my3cftwkqo5/test_data.joblib?rlkey=vh09ylrcp9sb6x0vmynb569z5&st=0ogs5bvx&dl=1"
 
       @st.cache_resource
       def load_joblib_from_dropbox(url):
