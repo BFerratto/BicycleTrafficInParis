@@ -340,9 +340,9 @@ if page == pages[3] :
 
 
       # Updated Dropbox URLs (with ?dl=1)
-      lr_url = "https://www.dropbox.com/scl/fi/trvlk3yxu40xdy9w2mo68/lr_model.joblib?rlkey=yfcxbe1fphv8us5913q2f92a9&st=f211lo9d&dl=1"
-      rf_url = "https://www.dropbox.com/scl/fi/07s72e7ebeojhnrli7csw/rf_model.joblib?rlkey=mpe1a5wglc5d8q1i9kqk8vq2f&st=dlsy6694&dl=1"
-      test_data_url = "https://www.dropbox.com/scl/fi/gsy09qnrhnv28ajf9z4zq/test_data.joblib?rlkey=6niceuqowg5pw9unylgpqhpq9&st=k1882c8q&dl=1"
+      lr_url = "https://www.dropbox.com/scl/fi/dagcwzr3c02xh6oyqbmbt/lr_model.joblib?rlkey=ltpvbopvskvtqpbclug8h6nxo&st=v9h5vkj0&dl=1"
+      rf_url = "https://www.dropbox.com/scl/fi/af2rwrotyd5n5ismne6ae/rf_model.joblib?rlkey=u0poqkph01kg3p4hfl98q5sug&st=geh2lhdt&dl=1"
+      test_data_url = "https://www.dropbox.com/scl/fi/d2cjp01ni6my3cftwkqo5/test_data.joblib?rlkey=vh09ylrcp9sb6x0vmynb569z5&st=0ogs5bvx&dl=1"
 
       @st.cache_resource
       def load_joblib_from_dropbox(url):
