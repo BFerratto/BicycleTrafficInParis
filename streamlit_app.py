@@ -154,7 +154,7 @@ if page == pages[2] :
               Additional visualizations focused on directional flow differences:
               """)
   # DEBUG 
-  st.write("Columns:", df.columns.tolist())
+  #st.write("Columns:", df.columns.tolist())
   #st.write("head 50:", df.head(50))
   
  # --- Prepare directional flow data ---
