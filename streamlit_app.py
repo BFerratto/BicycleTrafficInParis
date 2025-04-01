@@ -25,8 +25,11 @@ if page == pages[0] :
   st.markdown("""
         ### ⭐ Introduction & City Map
         """)
- 
-  st.image("img/bikepic.jpg")
+  def load_image(path):
+    return Image.open(path)
+
+  img = load_image("img/bikepic.jpg")
+  st.image(img, use_column_width=True)
   st.markdown("""
         Paris has made significant strides toward becoming a more bike-friendly city. As urban planners and policymakers aim to optimize infrastructure and promote sustainable mobility, understanding bicycle traffic patterns is essential. This project analyzes bicycle traffic data collected from automated counters across Paris with a dual focus: evaluating general hourly traffic volumes and identifying imbalances in directional flow across routes.
         """)
