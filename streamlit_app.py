@@ -11,7 +11,8 @@ from sklearn.datasets import make_regression
 import joblib
 import sys
 import sklearn
-import streamlit as st
+import requests
+from io import BytesIO
 
 
 @st.cache_data
@@ -330,9 +331,26 @@ if page == pages[3] :
 
                 - MAE and RMSE were less than half of those for Linear Regression.
                  """)
-      lr_model = joblib.load("models/lr_model.joblib")
-      rf_model = joblib.load("models/rf_model.joblib")
-      X_test, y_test = joblib.load("models/test_data.joblib")
+      def load_joblib_from_dropbox(url):
+        # Convert Dropbox preview link to raw link
+        raw_url = url.replace("?dl=0", "?raw=1").replace("&dl=0", "&raw=1")
+        response = requests.get(raw_url)
+        response.raise_for_status()  # raise if the download failed
+        return joblib.load(BytesIO(response.content))
+
+
+      # URLs
+      lr_url = "https://www.dropbox.com/scl/fi/trvlk3yxu40xdy9w2mo68/lr_model.joblib?rlkey=yfcxbe1fphv8us5913q2f92a9&st=f211lo9d&dl=0"
+      rf_url = "https://www.dropbox.com/scl/fi/07s72e7ebeojhnrli7csw/rf_model.joblib?rlkey=mpe1a5wglc5d8q1i9kqk8vq2f&st=dlsy6694&dl=0"
+      test_data_url = "https://www.dropbox.com/scl/fi/gsy09qnrhnv28ajf9z4zq/test_data.joblib?rlkey=6niceuqowg5pw9unylgpqhpq9&st=k1882c8q&dl=0"
+
+      # Load models
+      with st.spinner("Loading models..."):
+          lr_model = load_joblib_from_dropbox(lr_url)
+          rf_model = load_joblib_from_dropbox(rf_url)
+          X_test, y_test = load_joblib_from_dropbox(test_data_url)
+
+          st.success("Models loaded successfully!")
       
       y_pred_lr = lr_model.predict(X_test)
       y_pred_rf = rf_model.predict(X_test)
