@@ -288,24 +288,33 @@ if page == pages[3] :
 
       
                 """)
+  # Track section visibility
+  if "show_directional_ml" not in st.session_state:
+      st.session_state.show_directional_ml = False
+
   if col2.button("For Directional Flow and Route-Level Imbalance Analysis"):
+      st.session_state.show_directional_ml = True
+
+  # Only show content if the section was triggered
+  if st.session_state.show_directional_ml:
       st.markdown("""
-                  **2. Directional Flow Difference Prediction**
+          **2. Directional Flow Difference Prediction**
 
-                  - Goal: Predict the difference in traffic volume between opposite directions on the same route.
+          - Goal: Predict the difference in traffic volume between opposite directions on the same route.
 
-                  - Models: RandomForestRegressor and Linear Regression
+          - Models: RandomForestRegressor and Linear Regression
 
-                  **Preprocessing:**
+          **Preprocessing:**
 
-                  - Split Counter Name into Base Route and Direction
+          - Split Counter Name into Base Route and Direction
 
-                  - Retained only routes with valid bidirectional data
+          - Retained only routes with valid bidirectional data
 
-                  - Created a new feature Difference
+          - Created a new feature Difference
 
-                  **Results:**
-                """)
+          **Results:**
+      """)
+
       # Define your data
       data = {
           "R²": [0.82, 0.40],
@@ -322,105 +331,97 @@ if page == pages[3] :
           {"selector": "td", "props": [("text-align", "center")]}
       ]).format("{:.2f}")
 
-      # Display it in Streamlit
       st.dataframe(styled_df, use_container_width=True)
-      
+
       st.markdown("""
+          - Random Forest achieved an R² of 0.82, significantly outperforming Linear Regression (R² = 0.40).
 
-                - Random Forest achieved an R² of 0.82, significantly outperforming Linear Regression (R² = 0.40).
+          - MAE and RMSE were less than half of those for Linear Regression.
+      """)
 
-                - MAE and RMSE were less than half of those for Linear Regression.
-                 """)
-      def load_joblib_from_dropbox(url):
-        # Convert Dropbox preview link to raw link
-        raw_url = url.replace("?dl=0", "?raw=1").replace("&dl=0", "&raw=1")
-        response = requests.get(raw_url)
-        response.raise_for_status()  # raise if the download failed
-        return joblib.load(BytesIO(response.content))
-
-
-      # Updated Dropbox URLs (with ?dl=1)
+      # Hugging Face URLs
       lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
       test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
       rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model.joblib"
 
+      # Load function
       @st.cache_resource
-      def load_joblib_from_dropbox(url):
-          try:
-              st.write(f"Attempting to download: {url}")
-              response = requests.get(url, stream=True)
-              if response.status_code != 200:
-                  st.error(f"Failed to download: HTTP {response.status_code}")
-                  return None
-              buffer = BytesIO()
-              for chunk in response.iter_content(chunk_size=8192):
-                  if chunk:
-                      buffer.write(chunk)
-              buffer.seek(0)
-              st.write("Model downloaded, loading...")
-              model = joblib.load(buffer)
-              st.success("Loaded successfully.")
-              return model
-          except Exception as e:
-              st.error(f"Error loading model: {e}")
-              return None
+      def load_joblib_from_url(url):
+          response = requests.get(url, stream=True)
+          buffer = BytesIO()
+          for chunk in response.iter_content(chunk_size=8192):
+              buffer.write(chunk)
+          buffer.seek(0)
+          return joblib.load(buffer)
 
-      # Load models and test data
-      with st.spinner("Loading models..."):
-          lr_model = load_joblib_from_dropbox(lr_url)
-          rf_model = load_joblib_from_dropbox(rf_url)
-          test_data = load_joblib_from_dropbox(test_data_url)
+      # Initialize session state for models and data
+      for key in ["rf_model", "lr_model", "X_test", "y_test"]:
+          if key not in st.session_state:
+              st.session_state[key] = None
 
-          if test_data:
-              X_test, y_test = test_data
+      # Buttons to load each file
+      if st.button("Load Random Forest Model"):
+          with st.spinner("Loading Random Forest model..."):
+              st.session_state.rf_model = load_joblib_from_url(rf_url)
 
-          st.success("All models loaded!")
-      
-      y_pred_lr = lr_model.predict(X_test)
-      y_pred_rf = rf_model.predict(X_test)
-      
-      # Create new DataFrame for plotting
-      df_plot = pd.DataFrame({
-          "Actual": y_test,
-          "Random Forest": y_pred_rf,
-          "Linear Regression": y_pred_lr
-      })
+      if st.button("Load Linear Regression Model"):
+          with st.spinner("Loading Linear Regression model..."):
+              st.session_state.lr_model = load_joblib_from_url(lr_url)
 
-      # Melt for Plotly Express
-      df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")
+      if st.button("Load Test Data"):
+          with st.spinner("Loading test data..."):
+              test_data = load_joblib_from_url(test_data_url)
+              st.session_state.X_test, st.session_state.y_test = test_data
 
-      # Scatter plot
-      fig = px.scatter(
-          df_melted,
-          x="Actual",
-          y="Predicted",
-          color="Model",
-          opacity=0.6,
-          labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
-          title="Actual vs. Predicted Values"
-      )
+      # Run predictions if everything is ready
+      if all([
+          st.session_state.rf_model,
+          st.session_state.lr_model,
+          st.session_state.X_test is not None,
+          st.session_state.y_test is not None
+      ]):
+          y_pred_lr = st.session_state.lr_model.predict(st.session_state.X_test)
+          y_pred_rf = st.session_state.rf_model.predict(st.session_state.X_test)
 
-      # Add perfect fit line
-      min_val = df_melted["Actual"].min()
-      max_val = df_melted["Actual"].max()
+          df_plot = pd.DataFrame({
+              "Actual": st.session_state.y_test,
+              "Random Forest": y_pred_rf,
+              "Linear Regression": y_pred_lr
+          })
 
-      fig.add_trace(
-          go.Scatter(
-              x=[min_val, max_val],
-              y=[min_val, max_val],
-              mode="lines",
-              line=dict(dash="dash", color="black"),
-              name="Perfect Fit"
+          df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")
+
+          fig = px.scatter(
+              df_melted,
+              x="Actual",
+              y="Predicted",
+              color="Model",
+              opacity=0.6,
+              labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
+              title="Actual vs. Predicted Values"
           )
-      )
 
-      # Show in Streamlit
-      st.plotly_chart(fig, use_container_width=True)
-      st.markdown("""
-                  **Feature Importance:** 
+          min_val = df_melted["Actual"].min()
+          max_val = df_melted["Actual"].max()
 
-                  - `hourly_count` (`Comptage horaire`), hour of day, and coordinates were most influential.
-                  """)
+          fig.add_trace(
+              go.Scatter(
+                  x=[min_val, max_val],
+                  y=[min_val, max_val],
+                  mode="lines",
+                  line=dict(dash="dash", color="black"),
+                  name="Perfect Fit"
+              )
+          )
+
+          st.plotly_chart(fig, use_container_width=True)
+
+          st.markdown("""
+          **Feature Importance:**  
+          - `hourly_count`, hour of day, and coordinates were most influential.
+          """)
+
+
       
 if page == pages[4] :
 
