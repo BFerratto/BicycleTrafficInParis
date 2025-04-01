@@ -347,13 +347,24 @@ if page == pages[3] :
       # Load function
       @st.cache_resource
       def load_joblib_from_url(url):
+          st.write("📡 Downloading model from:", url)
           response = requests.get(url, stream=True)
+          st.write("📥 Response status:", response.status_code)
+
           buffer = BytesIO()
+          total_bytes = 0
           for chunk in response.iter_content(chunk_size=8192):
               buffer.write(chunk)
-          buffer.seek(0)
-          return joblib.load(buffer)
+              total_bytes += len(chunk)
+              if total_bytes > 5e7:  # show a message every ~50MB
+                  st.write(f"⬇️ Downloaded ~{total_bytes / 1e6:.1f} MB")
 
+          buffer.seek(0)
+          st.write("✅ Starting joblib load...")
+
+          model = joblib.load(buffer)
+          st.write("✅ Model loaded.")
+          return model
       # Initialize session state for models and data
       for key in ["rf_model", "lr_model", "X_test", "y_test"]:
           if key not in st.session_state:
