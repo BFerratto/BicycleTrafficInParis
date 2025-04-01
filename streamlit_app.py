@@ -338,7 +338,7 @@ if page == pages[3] :
 
           - MAE and RMSE were less than half of those for Linear Regression.
       """)
-
+      
       # Hugging Face URLs
       lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
       test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
@@ -358,7 +358,10 @@ if page == pages[3] :
       for key in ["rf_model", "lr_model", "X_test", "y_test"]:
           if key not in st.session_state:
               st.session_state[key] = None
-
+      #DEBUG SPACE
+      import psutil
+      mem = psutil.virtual_memory()
+      st.write(f"💾 Available memory: {mem.available / 1e6:.2f} MB")
       # Buttons to load each file
       if st.button("Load Random Forest Model"):
           with st.spinner("Loading Random Forest model..."):
