@@ -339,18 +339,42 @@ if page == pages[3] :
         return joblib.load(BytesIO(response.content))
 
 
-      # URLs
-      lr_url = "https://www.dropbox.com/scl/fi/trvlk3yxu40xdy9w2mo68/lr_model.joblib?rlkey=yfcxbe1fphv8us5913q2f92a9&st=f211lo9d&dl=0"
-      rf_url = "https://www.dropbox.com/scl/fi/07s72e7ebeojhnrli7csw/rf_model.joblib?rlkey=mpe1a5wglc5d8q1i9kqk8vq2f&st=dlsy6694&dl=0"
-      test_data_url = "https://www.dropbox.com/scl/fi/gsy09qnrhnv28ajf9z4zq/test_data.joblib?rlkey=6niceuqowg5pw9unylgpqhpq9&st=k1882c8q&dl=0"
+      # Updated Dropbox URLs (with ?dl=1)
+      lr_url = "https://www.dropbox.com/scl/fi/trvlk3yxu40xdy9w2mo68/lr_model.joblib?rlkey=yfcxbe1fphv8us5913q2f92a9&st=f211lo9d&dl=1"
+      rf_url = "https://www.dropbox.com/scl/fi/07s72e7ebeojhnrli7csw/rf_model.joblib?rlkey=mpe1a5wglc5d8q1i9kqk8vq2f&st=dlsy6694&dl=1"
+      test_data_url = "https://www.dropbox.com/scl/fi/gsy09qnrhnv28ajf9z4zq/test_data.joblib?rlkey=6niceuqowg5pw9unylgpqhpq9&st=k1882c8q&dl=1"
 
-      # Load models
+      @st.cache_resource
+      def load_joblib_from_dropbox(url):
+          try:
+              st.write(f"Attempting to download: {url}")
+              response = requests.get(url, stream=True)
+              if response.status_code != 200:
+                  st.error(f"Failed to download: HTTP {response.status_code}")
+                  return None
+              buffer = BytesIO()
+              for chunk in response.iter_content(chunk_size=8192):
+                  if chunk:
+                      buffer.write(chunk)
+              buffer.seek(0)
+              st.write("Model downloaded, loading...")
+              model = joblib.load(buffer)
+              st.success("Loaded successfully.")
+              return model
+          except Exception as e:
+              st.error(f"Error loading model: {e}")
+              return None
+
+      # Load models and test data
       with st.spinner("Loading models..."):
           lr_model = load_joblib_from_dropbox(lr_url)
           rf_model = load_joblib_from_dropbox(rf_url)
-          X_test, y_test = load_joblib_from_dropbox(test_data_url)
+          test_data = load_joblib_from_dropbox(test_data_url)
 
-          st.success("Models loaded successfully!")
+          if test_data:
+              X_test, y_test = test_data
+
+          st.success("All models loaded!")
       
       y_pred_lr = lr_model.predict(X_test)
       y_pred_rf = rf_model.predict(X_test)
