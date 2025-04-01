@@ -2,7 +2,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 from PIL import Image
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.datasets import make_regression
+import joblib
+import sys
+import sklearn
+import streamlit as st
 
 
 @st.cache_data
@@ -144,7 +153,7 @@ if page == pages[2] :
               Additional visualizations focused on directional flow differences:
               """)
   # DEBUG 
-  # st.write("Columns:", df.columns.tolist())
+  st.write("Columns:", df.columns.tolist())
   #st.write("head 50:", df.head(50))
   
  # --- Prepare directional flow data ---
@@ -241,6 +250,29 @@ if page == pages[3] :
                 - Scaled numerical features.
 
                 **Results**
+              """)
+    # Define your data
+    data = {
+        "R² train": [0.98, 0.78],
+        "R² test": [0.87, 0.78],
+        "MAE train": [6.79, 26.63],
+        "MAE test": [18.29, 26.78],
+        "MSE train": [208.09, 2435.52],
+        "MSE test": [1489.51, 2468.63]
+    }
+    index = ["RFR", "XGBR"]
+
+    df = pd.DataFrame(data, index=index)
+
+    # Optional: apply styling
+    styled_df = df.style.set_table_styles([
+        {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
+        {"selector": "td", "props": [("text-align", "center")]}
+    ]).format("{:.2f}")
+
+    # Display it in Streamlit
+    st.dataframe(styled_df, use_container_width=True)
+    st.markdown("""
 
                 - Random Forest outperformed XGBoost with an R² of 0.87 on the test set.
 
@@ -272,15 +304,82 @@ if page == pages[3] :
                   - Created a new feature Difference
 
                   **Results:**
+                """)
+      # Define your data
+      data = {
+          "R²": [0.82, 0.40],
+          "MAE": [7.96, 20.17],
+          "RMSE": [19.86, 36.53]
+      }
+      index = ["RFR", "LR"]
 
-                  - Random Forest achieved an R² of 0.82, significantly outperforming Linear Regression (R² = 0.40).
+      df_ml_direction = pd.DataFrame(data, index=index)
 
-                  - MAE and RMSE were less than half of those for Linear Regression.
+      # Optional: apply styling
+      styled_df = df_ml_direction.style.set_table_styles([
+          {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
+          {"selector": "td", "props": [("text-align", "center")]}
+      ]).format("{:.2f}")
 
+      # Display it in Streamlit
+      st.dataframe(styled_df, use_container_width=True)
+      
+      st.markdown("""
+
+                - Random Forest achieved an R² of 0.82, significantly outperforming Linear Regression (R² = 0.40).
+
+                - MAE and RMSE were less than half of those for Linear Regression.
+                 """)
+      lr_model = joblib.load("models/lr_model.joblib")
+      rf_model = joblib.load("models/rf_model.joblib")
+      X_test, y_test = joblib.load("models/test_data.joblib")
+      
+      y_pred_lr = lr_model.predict(X_test)
+      y_pred_rf = rf_model.predict(X_test)
+      
+      # Create new DataFrame for plotting
+      df_plot = pd.DataFrame({
+          "Actual": y_test,
+          "Random Forest": y_pred_rf,
+          "Linear Regression": y_pred_lr
+      })
+
+      # Melt for Plotly Express
+      df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")
+
+      # Scatter plot
+      fig = px.scatter(
+          df_melted,
+          x="Actual",
+          y="Predicted",
+          color="Model",
+          opacity=0.6,
+          labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
+          title="Actual vs. Predicted Values"
+      )
+
+      # Add perfect fit line
+      min_val = df_melted["Actual"].min()
+      max_val = df_melted["Actual"].max()
+
+      fig.add_trace(
+          go.Scatter(
+              x=[min_val, max_val],
+              y=[min_val, max_val],
+              mode="lines",
+              line=dict(dash="dash", color="black"),
+              name="Perfect Fit"
+          )
+      )
+
+      # Show in Streamlit
+      st.plotly_chart(fig, use_container_width=True)
+      st.markdown("""
                   **Feature Importance:** 
 
                   - `hourly_count` (`Comptage horaire`), hour of day, and coordinates were most influential.
                   """)
+      
 if page == pages[4] :
 
     st.markdown("""
