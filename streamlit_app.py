@@ -17,11 +17,10 @@ from io import BytesIO
 
 @st.cache_data
 def load_data():
-    url = "https://www.dropbox.com/scl/fi/1lxs8tbcmuttomutqb0ib/df_processed.csv?rlkey=p119wap7h05ynwjq7ryjh0qpm&st=y46ffwem&dl=1"
+    url = "https://huggingface.co/datasets/BFerratto/bikesParis/resolve/main/df_processed_1023_0924.csv"
     return pd.read_csv(url)
 
 df = load_data()
-
 
 # Page Title & Sidebar
 st.title("🚲 Analysis of Bicycle Traffic in Paris")
