@@ -164,11 +164,11 @@ if page == pages[2] :
   
   df_directional["season"] = df_directional["date_time_utc_plus_2"].dt.month.map(get_season)
   
-  # Group by weekday and season
+  # Group by weekday and season, calculate total and average
   counts_by_weekday_season = (
       df_directional.groupby(["weekday", "season"])["hourly_count"]
-      .mean()
-      .reset_index(name="average_counts")
+      .agg(total_counts="sum", average_counts="mean")
+      .reset_index()
   )
   
   # Order weekdays
@@ -180,14 +180,19 @@ if page == pages[2] :
   
   # Plot
   fig_seasonal = px.line(
-      counts_by_weekday_season,
-      x="weekday",
-      y="average_counts",
-      color="season",
-      title="📅 Average Bicycle Counts per Weekday by Season (Oct 2023 – Sep 2024)",
-      labels={"average_counts": "Average Counts", "weekday": "Day of Week", "season": "Season"}
-  )
-  
+     counts_by_weekday_season,
+     x="weekday",
+     y="average_counts",
+     color="season",
+     title="📅 Average Bicycle Counts per Weekday by Season (Oct 2023 – Sep 2024)",
+     labels={
+         "average_counts": "Avg Counts",
+         "total_counts": "Total Counts",
+         "weekday": "Day of Week",
+         "season": "Season"
+     },
+     hover_data=["total_counts", "average_counts"]
+     ) 
   st.plotly_chart(fig_seasonal, use_container_width=True)
   
   st.markdown(""" 
