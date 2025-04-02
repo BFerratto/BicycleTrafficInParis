@@ -342,7 +342,7 @@ if page == pages[3] :
       # Hugging Face URLs
       lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
       test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
-      rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model.joblib"
+      rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model_light.joblib"
 
       # Load function
       @st.cache_resource
