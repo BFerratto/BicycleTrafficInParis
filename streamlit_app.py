@@ -13,22 +13,26 @@ import sys
 import sklearn
 import requests
 from io import BytesIO
-
+import io
 
 @st.cache_data
-def load_data():
+def load_main_data():
     url = "https://huggingface.co/datasets/BFerratto/bikesParis/resolve/main/df_processed_1023_0924.csv"
     return pd.read_csv(url)
 
-df = load_data()
+@st.cache_data
+def load_directional_data():
+    url = "https://huggingface.co/datasets/BFerratto/bikesParis/resolve/main/df_processed_one_direction.csv"
+    return pd.read_csv(url)
+
+df_main = load_main_data()
+df_directional = load_directional_data()
 
 # Page Title & Sidebar
 st.title("🚲 Analysis of Bicycle Traffic in Paris")
 st.sidebar.title("Contents")
 pages = ["Introduction", "Data Exploration", "Data Visualization","Machine Learning", "Conclusions"]
 page = st.sidebar.radio("Navigate to", pages)
-
-df.columns=df.columns.str.strip().str.lower().str.replace(" ", "_")
 
 if page == pages[0] : 
   st.markdown("""
@@ -47,7 +51,7 @@ if page == pages[0] :
 
   # OKTOBER 2023 BIS SEPTEMBER 2024
   MAP_select_2324 = ["2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09"]
-  df_1023_0924 = df[df["month_year_count"].str.contains("|".join(MAP_select_2324))]
+  df_1023_0924 = df_main[df_main["month_year_count"].str.contains("|".join(MAP_select_2324))]
   MAP_one_year = df_1023_0924
   # Removing of the two outliers
   MAP_one_year = MAP_one_year[MAP_one_year["hourly_count"] != 8190]
@@ -67,9 +71,9 @@ if page == pages[0] :
   summed_counts = MAP_one_year.groupby("technical_meter_identifier")["hourly_count"].sum().reset_index()
   summed_counts = summed_counts.rename(columns={"technical_meter_identifier": "Meter ID (technical)"})
   summed_counts.reset_index(drop=True)
-  merged_df = df_tecID_geo.merge(summed_counts[["Meter ID (technical)", "hourly_count"]], on="Meter ID (technical)", how='left')
-  merged_df["hourly_count"] = merged_df["hourly_count"].fillna(0)
-  df_MAP = merged_df.rename(columns={"hourly_count": "Total counts"})
+  df = df_tecID_geo.merge(summed_counts[["Meter ID (technical)", "hourly_count"]], on="Meter ID (technical)", how='left')
+  df["hourly_count"] = df["hourly_count"].fillna(0)
+  df_MAP = df.rename(columns={"hourly_count": "Total counts"})
 
   # Plotly
   fig = px.scatter_mapbox(
@@ -135,7 +139,7 @@ if page == pages[1]:
 
                   Columns maintained:
       """)
-    st.dataframe(df.columns[:6])
+    st.dataframe(df_main.columns[:6])
 
 if page == pages[2] :
   st.write("### 📈 Data Visualization")
@@ -152,14 +156,12 @@ if page == pages[2] :
 
               Additional visualizations focused on directional flow differences:
               """)
-  # DEBUG 
-  #st.write("Columns:", df.columns.tolist())
-  #st.write("head 50:", df.head(50))
+
   
  # --- Prepare directional flow data ---
   @st.cache_data
-  def prepare_directional_flow(df, top_n=20):
-      grouped = df.groupby("base_route").agg({
+  def prepare_directional_flow(df_directional, top_n=20):
+      grouped = df_directional.groupby("base_route").agg({
           "so-ne": "sum",
           "ne-so": "sum",
           "se-no": "sum",
@@ -190,7 +192,7 @@ if page == pages[2] :
   st.write("This chart shows the top routes in Paris by the imbalance of bicycle traffic flow between directions.")
 
   top_n = st.slider("Number of top routes to display", 5, 30, 20)
-  df_flow = prepare_directional_flow(df, top_n=top_n)
+  df_flow = prepare_directional_flow(df_directional, top_n=top_n)
 
   # --- Plot ---
   fig = px.bar(
