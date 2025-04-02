@@ -148,6 +148,47 @@ if page == pages[2] :
 
               - Daily traffic trends revealed a significant drop in weekend cycling, consistent with reduced commuting.
               """)
+  # Convert to datetime
+  df_directional["date_time_utc_plus_2"] = pd.to_datetime(df_directional["date_time_utc_plus_2"])
+  
+  # Create 'season' column from month
+  def get_season(month):
+      if month in [12, 1, 2]:
+          return "Winter"
+      elif month in [3, 4, 5]:
+          return "Spring"
+      elif month in [6, 7, 8]:
+          return "Summer"
+      else:
+          return "Fall"
+  
+  df_directional["season"] = df_directional["date_time_utc_plus_2"].dt.month.map(get_season)
+  
+  # Group by weekday and season
+  counts_by_weekday_season = (
+      df_directional.groupby(["weekday", "season"])["hourly_count"]
+      .mean()
+      .reset_index(name="average_counts")
+  )
+  
+  # Order weekdays
+  weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+  counts_by_weekday_season["weekday"] = pd.Categorical(
+      counts_by_weekday_season["weekday"], categories=weekday_order, ordered=True
+  )
+  counts_by_weekday_season = counts_by_weekday_season.sort_values("weekday")
+  
+  # Plot
+  fig_seasonal = px.line(
+      counts_by_weekday_season,
+      x="weekday",
+      y="average_counts",
+      color="season",
+      title="📅 Average Bicycle Counts per Weekday by Season (Oct 2023 – Sep 2024)",
+      labels={"average_counts": "Average Counts", "weekday": "Day of Week", "season": "Season"}
+  )
+  
+  st.plotly_chart(fig_seasonal, use_container_width=True)
   
   st.markdown(""" 
               - Seasonal traffic analysis showed summer months experiencing over twice the volume of winter, reinforcing weather's influence on biking behavior.
