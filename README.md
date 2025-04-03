@@ -4,12 +4,21 @@ Data set: "comptage_velo_donnees_compteurs.csv"
 Source: opendate.paris.fr
 
 # Requirements
-streamlit
-git lfs install
-!! add the dataset in the folder data!!
+streamlit==1.37.0
+rich==13.7.1
+pandas
+numpy
+plotly
+scikit-learn==1.5.1
+Pillow
+joblib
+psutil
 
 # Run
 streamlit run streamlit_app.py
+
+# Deployed
+https://bicycletrafficinparis.streamlit.app/
 
 # Objectives 
 The main goal of this analysis is to understand bicycle traffic patterns in Paris and extract
