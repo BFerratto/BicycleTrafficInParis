@@ -494,6 +494,26 @@ if page == pages[3] :
             **Feature Importance:**  
             - `hourly_count`, hour of day, and coordinates were most influential.
             """)
+            # 🧠 Feature Importance Plot for Random Forest
+            if st.session_state.rf_model is not None and hasattr(st.session_state.rf_model, "feature_importances_"):
+                feature_importance = st.session_state.rf_model.feature_importances_
+                importance_df = pd.DataFrame({
+                    'Feature': st.session_state.X_test.columns,
+                    'Importance': feature_importance
+                }).sort_values(by='Importance', ascending=True)  # Ascending for horizontal plot
+            
+                # Plot using Plotly
+                fig_importance = px.bar(
+                    importance_df,
+                    x='Importance',
+                    y='Feature',
+                    orientation='h',
+                    title='🔍 Feature Importance in Random Forest',
+                    labels={'Importance': 'Feature Importance', 'Feature': 'Feature'},
+                    height=500
+                )
+            
+                st.plotly_chart(fig_importance, use_container_width=True)
 
 if page == pages[4] :
 
