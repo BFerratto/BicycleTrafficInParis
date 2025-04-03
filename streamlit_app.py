@@ -125,12 +125,36 @@ if page == pages[1]:
                   - Geographic coordinates
 
                   - Metadata (e.g., photo links, installation dates)
-
+                  
+                  - A link to the original Data:
+                  """)
+    
+    st.markdown('<a href="https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name" target="_blank" style="color:blue; text-decoration:none;">Link to Data</a>', unsafe_allow_html=True)
+    st.write("Exemplary data extract")
+    data_example = {
+    "Meter identifier": ["100003096-353242251", "100003096-353242251", "100003096-353242251", "100003096-353242251"],
+    "Meter name": ["97 avenue Denfert Rochereau SO-NE", "97 avenue Denfert Rochereau SO-NE", "97 avenue Denfert Rochereau SO-NE", "97 avenue Denfert Rochereau SO-NE"],
+    "Metering site identifier": ["100003096", "100003096", "100003096", "100003096"],
+    "Name of metering site": ["97 avenue Denfert Rochereau", "97 avenue Denfert Rochereau", "97 avenue Denfert Rochereau", "97 avenue Denfert Rochereau"],
+    "Hourly count": [4, 63, 16, 225],
+    "Metering date and time": ["2023-09-01T05:00:00+02:00", "2023-09-01T07:00:00+02:00", "2023-09-01T06:00:00+02:00", "2023-09-01T08:00:00+02:00"],
+    "Metering site installation date": ["2012-02-22", "2012-02-22", "2012-02-22", "2012-02-22"],
+    "Link to photo of metering site": ["https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d..."],
+    "Geographical coordinates": ["48.83504,2.33314", "48.83504,2.33314", "48.83504,2.33314", "48.83504,2.33314"],
+    "Technical meter identifier": ["Y2H21111072", "Y2H21111072", "Y2H21111072", "Y2H21111072"],
+    "Photo ID": ["https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d..."],
+    "Test link to photos of counting site": ["https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d..."],
+    "ID photo 1": ["https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d...", "https://filer.eco-counter-tools.com/file/10/6d..."],
+    "URL website": ["https://www.eco-visio.net/Photos/100003096", "https://www.eco-visio.net/Photos/100003096", "https://www.eco-visio.net/Photos/100003096", "https://www.eco-visio.net/Photos/100003096"],
+    "Image type": ["jpg", "jpg", "jpg", "jpg"],
+    "Month year count": ["2023-09", "2023-09", "2023-09", "2023-09"]
+    }
+    df_ex = pd.DataFrame(data_example)
+    st.dataframe(df_ex)
+    st.markdown("""
+                  
                 After translation from French and cleaning, 16 columns were retained, providing temporal, spatial, and categorical features relevant to understanding traffic patterns. Columns like `metering_site_installation_date` and redundant photo identifiers were removed to enhance processing efficiency.
 
-
-
-      
                   **Pre-processing**
 
                   The period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
