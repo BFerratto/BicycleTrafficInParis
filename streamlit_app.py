@@ -37,99 +37,90 @@ pages = ["Introduction", "Data Exploration", "Data Visualization","Machine Learn
 page = st.sidebar.radio("Navigate to", pages)
 
 if page == pages[0] : 
-  st.markdown("""
+    st.markdown("""
         ### ⭐ Introduction & City Map
         """)
-  def load_image(path):
-    return Image.open(path)
+    def load_image(path):
+        return Image.open(path)
 
-  img = load_image("img/bikepic.jpg")
-  st.image(img, use_column_width=True)
-  st.markdown("""
+    img = load_image("img/bikepic.jpg")
+    st.image(img, use_column_width=True)
+    st.markdown("""
         Paris has made significant strides toward becoming a more bike-friendly city. As urban planners and policymakers aim to optimize infrastructure and promote sustainable mobility, understanding bicycle traffic patterns is essential. This project analyzes bicycle traffic data collected from automated counters across Paris with a dual focus: evaluating general hourly traffic volumes and identifying imbalances in directional flow across routes.
         """)
-  st.subheader("Bicycle traffic map")
+    st.subheader("Bicycle traffic map")
 
 
-  # OKTOBER 2023 BIS SEPTEMBER 2024
-  MAP_select_2324 = ["2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09"]
-  df_1023_0924 = df_main[df_main["month_year_count"].str.contains("|".join(MAP_select_2324))]
-  MAP_one_year = df_1023_0924
-  # Removing of the two outliers
-  MAP_one_year = MAP_one_year[MAP_one_year["hourly_count"] != 8190]
-  MAP_one_year = MAP_one_year[MAP_one_year["hourly_count"] != 2047]
+    # OKTOBER 2023 BIS SEPTEMBER 2024
+    MAP_select_2324 = ["2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09"]
+    df_1023_0924 = df_main[df_main["month_year_count"].str.contains("|".join(MAP_select_2324))]
+    MAP_one_year = df_1023_0924
+    # Removing of the two outliers
+    MAP_one_year = MAP_one_year[MAP_one_year["hourly_count"] != 8190]
+    MAP_one_year = MAP_one_year[MAP_one_year["hourly_count"] != 2047]   
+    filtered_meterIDs = MAP_one_year.drop_duplicates(subset="technical_meter_identifier")
+    tecID_geo = filtered_meterIDs[["technical_meter_identifier", "geographical_coordinates"]]
+    Latitudes = tecID_geo["geographical_coordinates"].apply(lambda b: b.split(',')[0])
+    Longitudes = tecID_geo["geographical_coordinates"].apply(lambda l: l.split(',')[1])
+    lat_lon = pd.DataFrame({"latitude": Latitudes, "longitude": Longitudes})
+    df_tecID_geo = pd.concat([tecID_geo, lat_lon], axis=1)
+    df_tecID_geo = df_tecID_geo.drop(columns=["geographical_coordinates"])
+    df_tecID_geo = df_tecID_geo.rename(columns={"technical_meter_identifier": "Meter ID (technical)"})
+    df_tecID_geo = df_tecID_geo.reset_index(drop=True)
+    df_tecID_geo["latitude"] = df_tecID_geo["latitude"].astype(float)
+    df_tecID_geo["longitude"] = df_tecID_geo["longitude"].astype(float)
+    summed_counts = MAP_one_year.groupby("technical_meter_identifier")["hourly_count"].sum().reset_index()
+    summed_counts = summed_counts.rename(columns={"technical_meter_identifier": "Meter ID (technical)"})
+    summed_counts.reset_index(drop=True)
+    df = df_tecID_geo.merge(summed_counts[["Meter ID (technical)", "hourly_count"]], on="Meter ID (technical)", how='left')
+    df["hourly_count"] = df["hourly_count"].fillna(0)
+    df_MAP = df.rename(columns={"hourly_count": "Total counts"})    
+    # Plotly
+    fig = px.scatter_mapbox(
+        df_MAP,
+        lat="latitude",
+        lon="longitude",
+        hover_name="Meter ID (technical)", 
+        color="Total counts",
+        size="Total counts",
+        size_max=14,
+        color_continuous_scale=px.colors.sequential.Plasma,
+        zoom=11,        
+        mapbox_style="carto-positron")  
+    fig.update_layout(title='Counter locations in Paris recording the number of bycicles from October 2023 up to September 2024', width=1000, height=600,
 
-  filtered_meterIDs = MAP_one_year.drop_duplicates(subset="technical_meter_identifier")
-  tecID_geo = filtered_meterIDs[["technical_meter_identifier", "geographical_coordinates"]]
-  Latitudes = tecID_geo["geographical_coordinates"].apply(lambda b: b.split(',')[0])
-  Longitudes = tecID_geo["geographical_coordinates"].apply(lambda l: l.split(',')[1])
-  lat_lon = pd.DataFrame({"latitude": Latitudes, "longitude": Longitudes})
-  df_tecID_geo = pd.concat([tecID_geo, lat_lon], axis=1)
-  df_tecID_geo = df_tecID_geo.drop(columns=["geographical_coordinates"])
-  df_tecID_geo = df_tecID_geo.rename(columns={"technical_meter_identifier": "Meter ID (technical)"})
-  df_tecID_geo = df_tecID_geo.reset_index(drop=True)
-  df_tecID_geo["latitude"] = df_tecID_geo["latitude"].astype(float)
-  df_tecID_geo["longitude"] = df_tecID_geo["longitude"].astype(float)
-  summed_counts = MAP_one_year.groupby("technical_meter_identifier")["hourly_count"].sum().reset_index()
-  summed_counts = summed_counts.rename(columns={"technical_meter_identifier": "Meter ID (technical)"})
-  summed_counts.reset_index(drop=True)
-  df = df_tecID_geo.merge(summed_counts[["Meter ID (technical)", "hourly_count"]], on="Meter ID (technical)", how='left')
-  df["hourly_count"] = df["hourly_count"].fillna(0)
-  df_MAP = df.rename(columns={"hourly_count": "Total counts"})
+                coloraxis_colorbar=dict(title="Total counts"))
 
-  # Plotly
-  fig = px.scatter_mapbox(
-      df_MAP,
-      lat="latitude",
-      lon="longitude",
-      hover_name="Meter ID (technical)", 
-      color="Total counts",
-      size="Total counts",
-      size_max=14,
-      color_continuous_scale=px.colors.sequential.Plasma,
-      zoom=11,        
-      mapbox_style="carto-positron")
-
-  fig.update_layout(title='Counter locations in Paris recording the number of bycicles from October 2023 up to September 2024', width=1000, height=600,
-
-                  coloraxis_colorbar=dict(title="Total counts"))
-
-  # Anzeige des Diagramms in Streamlit
-  st.plotly_chart(fig)
-  st.markdown("""
+    # Anzeige des Diagramms in Streamlit
+    st.plotly_chart(fig)
+    st.markdown("""
         ## 🎯 Objectives
 
         This project aims to uncover insights from bicycle traffic data in Paris to support data-driven urban planning and transportation policy. Specifically, the objectives are to:
 
-      - ✅ Analyze overall cycling activity by hour, day, and season.
-
-      - ✅ Use machine learning to predict hourly bicycle counts based on time and location.
-
-      - ✅ Detect and model directional imbalances in cycling traffic on bidirectional routes.
-
-      - ✅ Evaluate the effectiveness of predictive models for both total volume and directional flow.
-
-      - ✅ Provide actionable recommendations for infrastructure planning and bike-sharing strategies.
+        - ✅ Analyze overall cycling activity by hour, day, and season. 
+        - ✅ Use machine learning to predict hourly bicycle counts based on time and location.  
+        - ✅ Detect and model directional imbalances in cycling traffic on bidirectional routes.    
+        - ✅ Evaluate the effectiveness of predictive models for both total volume and directional flow.    
+        - ✅ Provide actionable recommendations for infrastructure planning and bike-sharing strategies.
         
     """)
-  
+
 if page == pages[1]:
     st.write('### 🔍 Exploration & Description')
     st.markdown("""
                 The dataset, sourced from opendata.paris.fr, consists of over 940,000 entries covering October 2023 to September 2024. It includes information on:
 
-                  - Bicycle count per hour (`Comptage horaire`)
+                - Bicycle count per hour (`Comptage horaire`)
 
-                  - Meter location and identifiers
+                - Meter location and identifiers
 
-                  - Timestamp (`Date et heure de comptage`)
-
-                  - Geographic coordinates
-
-                  - Metadata (e.g., photo links, installation dates)
-                  
-                  - A link to the original Data:
-                  """)
+                - Timestamp (`Date et heure de comptage`)
+                - Geographic coordinates
+                - Metadata (e.g., photo links, installation dates)
+                
+                - A link to the original Data:
+                """)
     
     st.markdown('<a href="https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name" target="_blank" style="color:blue; text-decoration:none;">Link to Data</a>', unsafe_allow_html=True)
     st.write("Exemplary data extract")
@@ -154,350 +145,338 @@ if page == pages[1]:
     df_ex = pd.DataFrame(data_example)
     st.dataframe(df_ex)
     st.markdown("""
-                  
+                
                 After translation from French and cleaning, 16 columns were retained, providing temporal, spatial, and categorical features relevant to understanding traffic patterns. Columns like `metering_site_installation_date` and redundant photo identifiers were removed to enhance processing efficiency.
 
-                  **Pre-processing**
+                **Pre-processing**
 
-                  The period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
+                The period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
 
-                  Two extreme values of `hourly_count` (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
+                Two extreme values of `hourly_count` (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
 
-                  Columns maintained:
-      """)
+                Columns maintained:
+    """)
     st.dataframe(df_main.columns[:6])
 
 if page == pages[2] :
-  st.write("### 📈 Data Visualization")
-  st.markdown("""
-              To gain an initial understanding of bicycle behavior:
+    st.write("### 📈 Data Visualization")
+    st.markdown("""
+                To gain an initial understanding of bicycle behavior:
 
-              - Daily traffic trends revealed a significant drop in weekend cycling, consistent with reduced commuting.
-              """)
-  # Convert to datetime
-  df_directional["date_time_utc_plus_2"] = pd.to_datetime(df_directional["date_time_utc_plus_2"])
-  
-  # Create 'season' column from month
-  def get_season(month):
-      if month in [12, 1, 2]:
-          return "Winter"
-      elif month in [3, 4, 5]:
-          return "Spring"
-      elif month in [6, 7, 8]:
-          return "Summer"
-      else:
-          return "Fall"
-  
-  df_directional["season"] = df_directional["date_time_utc_plus_2"].dt.month.map(get_season)
-  
-  # Group by weekday and season, calculate total and average
-  counts_by_weekday_season = (
-      df_directional.groupby(["weekday", "season"])["hourly_count"]
-      .agg(total_counts="sum", average_counts="mean")
-      .reset_index()
-  )
-  
-  # Order weekdays
-  weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-  counts_by_weekday_season["weekday"] = pd.Categorical(
-      counts_by_weekday_season["weekday"], categories=weekday_order, ordered=True
-  )
-  counts_by_weekday_season = counts_by_weekday_season.sort_values("weekday")
-  
-  # Plot
-  fig_seasonal = px.line(
-     counts_by_weekday_season,
-     x="weekday",
-     y="average_counts",
-     color="season",
-     title="📅 Average Bicycle Counts per Weekday by Season (Oct 2023 – Sep 2024)",
-     labels={
-         "average_counts": "Avg Counts",
-         "total_counts": "Total Counts",
-         "weekday": "Day of Week",
-         "season": "Season"
-     },
-     hover_data=["total_counts", "average_counts"]
-     ) 
-  st.plotly_chart(fig_seasonal, use_container_width=True)
-  
-  st.markdown(""" 
-              - Seasonal traffic analysis showed summer months experiencing over twice the volume of winter, reinforcing weather's influence on biking behavior.
+                - Daily traffic trends revealed a significant drop in weekend cycling, consistent with reduced commuting.
+                """)
+    # Convert to datetime
+    df_directional["date_time_utc_plus_2"] = pd.to_datetime(df_directional["date_time_utc_plus_2"])
 
-              - Monthly trends highlighted a dip in August due to holiday periods.
+    # Create 'season' column from month
+    def get_season(month):
+        if month in [12, 1, 2]:
+            return "Winter"
+        elif month in [3, 4, 5]:
+            return "Spring"
+        elif month in [6, 7, 8]:
+            return "Summer"
+        else:
+            return "Fall"
 
-              Additional visualizations focused on directional flow differences:
-              """)
+    df_directional["season"] = df_directional["date_time_utc_plus_2"].dt.month.map(get_season)
 
-  
- # --- Prepare directional flow data ---
-  @st.cache_data
-  def prepare_directional_flow(df_directional, top_n=20):
-      grouped = df_directional.groupby("base_route").agg({
-          "so-ne": "sum",
-          "ne-so": "sum",
-          "se-no": "sum",
-          "no-se": "sum"
-      }).reset_index()
-  
-      # Net flow per direction pair
-      grouped["Flow_SO_NE"] = grouped["so-ne"] - grouped["ne-so"]
-      grouped["Flow_SE_NO"] = grouped["se-no"] - grouped["no-se"]
-  
-      # Total net flow
-      grouped["Total_Flow_Imbalance"] = grouped["Flow_SO_NE"] + grouped["Flow_SE_NO"]
-  
-      # Absolute net imbalance for cleaner plot
-      grouped["Net_Imbalance"] = grouped["Total_Flow_Imbalance"].abs()
-  
-      # Sort by absolute value
-      grouped = grouped.sort_values("Net_Imbalance", ascending=False).head(top_n)
-  
-      return grouped  
+    # Group by weekday and season, calculate total and average
+    counts_by_weekday_season = (
+        df_directional.groupby(["weekday", "season"])["hourly_count"]
+        .agg(total_counts="sum", average_counts="mean")
+        .reset_index()
+    )
+
+    # Order weekdays
+    weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    counts_by_weekday_season["weekday"] = pd.Categorical(
+        counts_by_weekday_season["weekday"], categories=weekday_order, ordered=True
+    )
+    counts_by_weekday_season = counts_by_weekday_season.sort_values("weekday")
+
+    # Plot
+    fig_seasonal = px.line(
+        counts_by_weekday_season,
+        x="weekday",
+        y="average_counts",
+        color="season",
+        title="📅 Average Bicycle Counts per Weekday by Season (Oct 2023 – Sep 2024)",
+        labels={
+            "average_counts": "Avg Counts",
+            "total_counts": "Total Counts",
+            "weekday": "Day of Week",
+            "season": "Season"
+        },
+        hover_data=["total_counts", "average_counts"]
+        ) 
+    st.plotly_chart(fig_seasonal, use_container_width=True)
+
+    st.markdown(""" 
+                - Seasonal traffic analysis showed summer months experiencing over twice the volume of winter, reinforcing weather's influence on biking behavior.  
+                - Monthly trends highlighted a dip in August due to holiday periods.    
+                Additional visualizations focused on directional flow differences:
+                """)    
+
+    # --- Prepare directional flow data ---
+    @st.cache_data
+    def prepare_directional_flow(df_directional, top_n=20):
+        grouped = df_directional.groupby("base_route").agg({
+            "so-ne": "sum",
+            "ne-so": "sum",
+            "se-no": "sum",
+            "no-se": "sum"
+        }).reset_index()
+    
+        # Net flow per direction pair
+        grouped["Flow_SO_NE"] = grouped["so-ne"] - grouped["ne-so"]
+        grouped["Flow_SE_NO"] = grouped["se-no"] - grouped["no-se"]
+
+        # Total net flow
+        grouped["Total_Flow_Imbalance"] = grouped["Flow_SO_NE"] + grouped["Flow_SE_NO"]
+
+        # Absolute net imbalance for cleaner plot
+        grouped["Net_Imbalance"] = grouped["Total_Flow_Imbalance"].abs()
+
+        # Sort by absolute value
+        grouped = grouped.sort_values("Net_Imbalance", ascending=False).head(top_n)
+
+        return grouped  
     # --- Streamlit UI ---
-  st.write("#### Directional Flow Imbalance by Route")
-  st.write("This chart shows the top routes in Paris with the largest directional bicycle traffic imbalance.")
-  
-  top_n = st.slider("Number of top routes to display", 5, 30, 20)
-  df_flow = prepare_directional_flow(df_directional, top_n=top_n)
-  
-  # --- Plot ---
-  fig = px.bar(
-      df_flow,
-      x="Net_Imbalance",
-      y="base_route",
-      orientation="h",
-      title="Top Routes by Net Directional Flow Imbalance",
-      labels={
-          "Net_Imbalance": "Absolute Net Flow Imbalance",
-          "base_route": "Route"
-      }
-  )
-  
-  fig.update_layout(
-      yaxis=dict(autorange="reversed"),
-      margin=dict(l=200, r=20, t=60, b=40),
-      font=dict(family="Arial", size=14),
-      xaxis_tickformat=".2s"
-  )
-  
-  st.plotly_chart(fig, use_container_width=True)
+    st.write("#### Directional Flow Imbalance by Route")
+    st.write("This chart shows the top routes in Paris with the largest directional bicycle traffic imbalance.")
+
+    top_n = st.slider("Number of top routes to display", 5, 30, 20)
+    df_flow = prepare_directional_flow(df_directional, top_n=top_n)
+
+    # --- Plot ---
+    fig = px.bar(
+        df_flow,
+        x="Net_Imbalance",
+        y="base_route",
+        orientation="h",
+        title="Top Routes by Net Directional Flow Imbalance",
+        labels={
+            "Net_Imbalance": "Absolute Net Flow Imbalance",
+            "base_route": "Route"
+        }
+    )
+
+    fig.update_layout(
+        yaxis=dict(autorange="reversed"),
+        margin=dict(l=200, r=20, t=60, b=40),
+        font=dict(family="Arial", size=14),
+        xaxis_tickformat=".2s"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 
-  st.markdown("""
+    st.markdown("""
 
               - Major flow imbalances are concentrated along a few key routes like **quai de la Tournelle** and **boulevard Masséna**, suggesting these corridors have highly directional commuting patterns (likely tied to peak-hour flows in and out of central Paris).
 
-              """)
+    """)
 if page == pages[3] :
-  st.write("### ⚙️ Machine Learning")
-  st.markdown("""
-              Two separate ML pipelines were developed to address distinct goals.
+    st.write("### ⚙️ Machine Learning")
+    st.markdown("""
+                Two separate ML pipelines were developed to address distinct goals.
             """)
-  col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)  
+    if col1.button("For Hourly Count Analysis"):
+        st.markdown("""
+                    **1. Hourly Count Prediction**
 
-  if col1.button("For Hourly Count Analysis"):
-    st.markdown("""
-                **1. Hourly Count Prediction**
+                    - Goal: Predict hourly bicycle traffic volume.
 
-                - Goal: Predict hourly bicycle traffic volume.
+                    - Models: RandomForestRegressor and XGBRegressor
 
-                - Models: RandomForestRegressor and XGBRegressor
+                    **Preprocessing:**
 
-                **Preprocessing:**
+                    - Extracted year, month, day, hour, and season from timestamps.
 
-                - Extracted year, month, day, hour, and season from timestamps.
+                    - One-hot encoded categorical variables (e.g., location).
 
-                - One-hot encoded categorical variables (e.g., location).
+                    - Scaled numerical features.
 
-                - Scaled numerical features.
-
-                **Results**
-              """)
-    # Define your data
-    data = {
-        "R² train": [0.98, 0.78],
-        "R² test": [0.87, 0.78],
-        "MAE train": [6.79, 26.63],
-        "MAE test": [18.29, 26.78],
-        "MSE train": [208.09, 2435.52],
-        "MSE test": [1489.51, 2468.63]
-    }
-    index = ["RFR", "XGBR"]
-
-    df = pd.DataFrame(data, index=index)
-
-    # Optional: apply styling
-    styled_df = df.style.set_table_styles([
-        {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
-        {"selector": "td", "props": [("text-align", "center")]}
-    ]).format("{:.2f}")
-
-    # Display it in Streamlit
-    st.dataframe(styled_df, use_container_width=True)
-    st.markdown("""
-
-                - Random Forest outperformed XGBoost with an R² of 0.87 on the test set.
-
-                - MAE: ~18 (Random Forest), ~27 (XGBoost)
-
-                - MSE and cross-validation supported the robustness of Random Forest.
-
-                **Feature Importance**
-
-                - Time-based variables, especially `hour`, strongly influenced prediction accuracy.
-
-
-      
+                    **Results**
                 """)
-  # Track section visibility
-  if "show_directional_ml" not in st.session_state:
-      st.session_state.show_directional_ml = False
+        # Define your data
+        data = {
+            "R² train": [0.98, 0.78],
+            "R² test": [0.87, 0.78],
+            "MAE train": [6.79, 26.63],
+            "MAE test": [18.29, 26.78],
+            "MSE train": [208.09, 2435.52],
+            "MSE test": [1489.51, 2468.63]
+        }
+        index = ["RFR", "XGBR"]
 
-  if col2.button("For Directional Flow and Route-Level Imbalance Analysis"):
-      st.session_state.show_directional_ml = True
+        df = pd.DataFrame(data, index=index)
 
-  # Only show content if the section was triggered
-  if st.session_state.show_directional_ml:
-      st.markdown("""
-          **2. Directional Flow Difference Prediction**
+        # Optional: apply styling
+        styled_df = df.style.set_table_styles([
+            {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
+            {"selector": "td", "props": [("text-align", "center")]}
+        ]).format("{:.2f}")
 
-          - Goal: Predict the difference in traffic volume between opposite directions on the same route.
+        # Display it in Streamlit
+        st.dataframe(styled_df, use_container_width=True)
+        st.markdown("""
 
-          - Models: RandomForestRegressor and Linear Regression
+                    - Random Forest outperformed XGBoost with an R² of 0.87 on the test set.
 
-          **Preprocessing:**
+                    - MAE: ~18 (Random Forest), ~27 (XGBoost)
 
-          - Split Counter Name into Base Route and Direction
+                    - MSE and cross-validation supported the robustness of Random Forest.
 
-          - Retained only routes with valid bidirectional data
+                    **Feature Importance**
 
-          - Created a new feature Difference
+                    - Time-based variables, especially `hour`, strongly influenced prediction accuracy.
 
-          **Results:**
-      """)
 
-      ## MOVE RESULTS HERE
+
+                    """)
+    # Track section visibility
+    if "show_directional_ml" not in st.session_state:
+        st.session_state.show_directional_ml = False
+
+    if col2.button("For Directional Flow and Route-Level Imbalance Analysis"):
+        st.session_state.show_directional_ml = True
+
+    # Only show content if the section was triggered
+    if st.session_state.show_directional_ml:
+        st.write("#### 2. Directional Flow Difference Prediction")
+
+        st.markdown("""
+            - Goal: Predict the difference in traffic volume between opposite directions on the same route. 
+            - Models: RandomForestRegressor and Linear Regression
+            """)   
+        st.write("##### Preprocessing")
+        st.markdown("""
+            - Split Counter Name into Base Route and Direction  
+            - Retained only routes with valid bidirectional data    
+            - Created a new feature Difference  
+        """)
+        st.write("##### Results")
+        ## MOVE RESULTS HERE
     
+        # Hugging Face URLs
+        lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
+        test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
+        rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model_light.joblib"   
+        # Load function
+        @st.cache_resource
+        def load_joblib_from_url(url):
+            response = requests.get(url, stream=True)
+            buffer = BytesIO()
+            for chunk in response.iter_content(chunk_size=8192):
+                buffer.write(chunk)
+            buffer.seek(0)
+            return joblib.load(buffer)  
+        # Initialize session state for models and data
+        for key in ["rf_model", "lr_model", "X_test", "y_test"]:
+            if key not in st.session_state:
+                st.session_state[key] = None
 
-      # Hugging Face URLs
-      lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
-      test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
-      rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model_light.joblib"
+        # Buttons to load each file
+        if st.button("Load Random Forest Model"):
+            with st.spinner("Loading Random Forest model..."):
+                st.session_state.rf_model = load_joblib_from_url(rf_url)
 
-      # Load function
-      @st.cache_resource
-      def load_joblib_from_url(url):
-          response = requests.get(url, stream=True)
-          buffer = BytesIO()
-          for chunk in response.iter_content(chunk_size=8192):
-              buffer.write(chunk)
-          buffer.seek(0)
-          return joblib.load(buffer)
+        if st.button("Load Linear Regression Model"):
+            with st.spinner("Loading Linear Regression model..."):
+                st.session_state.lr_model = load_joblib_from_url(lr_url)
 
-      # Initialize session state for models and data
-      for key in ["rf_model", "lr_model", "X_test", "y_test"]:
-          if key not in st.session_state:
-              st.session_state[key] = None
-  
-      # Buttons to load each file
-      if st.button("Load Random Forest Model"):
-          with st.spinner("Loading Random Forest model..."):
-              st.session_state.rf_model = load_joblib_from_url(rf_url)
-  
-      if st.button("Load Linear Regression Model"):
-          with st.spinner("Loading Linear Regression model..."):
-              st.session_state.lr_model = load_joblib_from_url(lr_url)
-  
-      if st.button("Load Test Data"):
-          with st.spinner("Loading test data..."):
-              test_data = load_joblib_from_url(test_data_url)
-              st.session_state.X_test, st.session_state.y_test = test_data
-  
-      # Run predictions if everything is ready
-      if all([
-          st.session_state.rf_model,
-          st.session_state.lr_model,
-          st.session_state.X_test is not None,
-          st.session_state.y_test is not None
-      ]):
-          y_pred_lr = st.session_state.lr_model.predict(st.session_state.X_test)
-          y_pred_rf = st.session_state.rf_model.predict(st.session_state.X_test)
-  
-          # Your metrics dictionary
-          metrics = {
-              "R²": [
-                  r2_score(st.session_state.y_test, y_pred_rf),
-                  r2_score(st.session_state.y_test, y_pred_lr)
-              ],
-              "MAE": [
-                  mean_absolute_error(st.session_state.y_test, y_pred_rf),
-                  mean_absolute_error(st.session_state.y_test, y_pred_lr)
-              ],
-              "RMSE": [
-                  mean_squared_error(st.session_state.y_test, y_pred_rf, squared=False),
-                  mean_squared_error(st.session_state.y_test, y_pred_lr, squared=False)
-              ]
-          }
-          
-          # Create DataFrame
-          index = ["RFR", "LR"]
-          df_metrics = pd.DataFrame(metrics, index=index)
-          
-          # Now access values with .loc
-          r2_rf = df_metrics.loc["RFR", "R²"]
-          r2_lr = df_metrics.loc["LR", "R²"]
-          mae_rf = df_metrics.loc["RFR", "MAE"]
-          mae_lr = df_metrics.loc["LR", "MAE"]
-          rmse_rf = df_metrics.loc["RFR", "RMSE"]
-          rmse_lr = df_metrics.loc["LR", "RMSE"]
-          
-          # Dynamic text display
-          st.markdown(f"""
-          - Random Forest achieved an R² of **{r2_rf:.2f}**, significantly outperforming Linear Regression (**{r2_lr:.2f}**).
-          - MAE: **{mae_rf:.2f}** (RFR) vs **{mae_lr:.2f}** (LR)
-          - RMSE: **{rmse_rf:.2f}** (RFR) vs **{rmse_lr:.2f}** (LR)
-          """)
+        if st.button("Load Test Data"):
+            with st.spinner("Loading test data..."):
+                test_data = load_joblib_from_url(test_data_url)
+                st.session_state.X_test, st.session_state.y_test = test_data
+
+        # Run predictions if everything is ready
+        if all([
+            st.session_state.rf_model,
+            st.session_state.lr_model,
+            st.session_state.X_test is not None,
+            st.session_state.y_test is not None
+        ]):
+            y_pred_lr = st.session_state.lr_model.predict(st.session_state.X_test)
+            y_pred_rf = st.session_state.rf_model.predict(st.session_state.X_test)
+
+            # Your metrics dictionary
+            metrics = {
+                "R²": [
+                    r2_score(st.session_state.y_test, y_pred_rf),
+                    r2_score(st.session_state.y_test, y_pred_lr)
+                ],
+                "MAE": [
+                    mean_absolute_error(st.session_state.y_test, y_pred_rf),
+                    mean_absolute_error(st.session_state.y_test, y_pred_lr)
+                ],
+                "RMSE": [
+                    mean_squared_error(st.session_state.y_test, y_pred_rf, squared=False),
+                    mean_squared_error(st.session_state.y_test, y_pred_lr, squared=False)
+                ]
+            }
+
+            # Create DataFrame
+            index = ["RFR", "LR"]
+            df_metrics = pd.DataFrame(metrics, index=index)
+            
+            # Now access values with .loc
+            r2_rf = df_metrics.loc["RFR", "R²"]
+            r2_lr = df_metrics.loc["LR", "R²"]
+            mae_rf = df_metrics.loc["RFR", "MAE"]
+            mae_lr = df_metrics.loc["LR", "MAE"]
+            rmse_rf = df_metrics.loc["RFR", "RMSE"]
+            rmse_lr = df_metrics.loc["LR", "RMSE"]
+            
+            # Dynamic text display
+            st.markdown(f"""
+            Random Forest achieved an R² of **{r2_rf:.2f}**, significantly outperforming Linear Regression (**{r2_lr:.2f}**).
+            MAE: **{mae_rf:.2f}** (RFR) vs **{mae_lr:.2f}** (LR)
+            RMSE: **{rmse_rf:.2f}** (RFR) vs **{rmse_lr:.2f}** (LR)
+            """)
                 
-      index = ["RFR", "LR"]
-      df_metrics = pd.DataFrame(metrics, index=index)  
-      styled_df = df_metrics.style.set_table_styles([
-          {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
-          {"selector": "td", "props": [("text-align", "center")]}
-      ]).format("{:.2f}")  
-      st.dataframe(styled_df, use_container_width=True)  
-      df_plot = pd.DataFrame({
-          "Actual": st.session_state.y_test,
-          "Random Forest": y_pred_rf,
-          "Linear Regression": y_pred_lr
-      })  
-      df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")  
-      fig = px.scatter(
-          df_melted,
-          x="Actual",
-          y="Predicted",
-          color="Model",
-          opacity=0.6,
-          labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
-          title="Actual vs. Predicted Values"
-      )  
-      min_val = df_melted["Actual"].min()
-      max_val = df_melted["Actual"].max()  
-      fig.add_trace(
-          go.Scatter(
-              x=[min_val, max_val],
-              y=[min_val, max_val],
-              mode="lines",
-              line=dict(dash="dash", color="black"),
-              name="Perfect Fit"
-          )
-      )  
-      st.plotly_chart(fig, use_container_width=True)  
-      st.markdown("""
-      **Feature Importance:**  
-      - `hourly_count`, hour of day, and coordinates were most influential.
-      """)
-      
+            index = ["RFR", "LR"]
+            df_metrics = pd.DataFrame(metrics, index=index)  
+            styled_df = df_metrics.style.set_table_styles([
+                {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
+                {"selector": "td", "props": [("text-align", "center")]}
+            ]).format("{:.2f}")  
+            st.dataframe(styled_df, use_container_width=True)  
+            df_plot = pd.DataFrame({
+                "Actual": st.session_state.y_test,
+                "Random Forest": y_pred_rf,
+                "Linear Regression": y_pred_lr
+            })  
+            df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")  
+            fig = px.scatter(
+                df_melted,
+                x="Actual",
+                y="Predicted",
+                color="Model",
+                opacity=0.6,
+                labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
+                title="Actual vs. Predicted Values"
+            )  
+            min_val = df_melted["Actual"].min()
+            max_val = df_melted["Actual"].max()  
+            fig.add_trace(
+                go.Scatter(
+                    x=[min_val, max_val],
+                    y=[min_val, max_val],
+                    mode="lines",
+                    line=dict(dash="dash", color="black"),
+                    name="Perfect Fit"
+                )
+            )  
+            st.plotly_chart(fig, use_container_width=True)  
+            st.markdown("""
+            **Feature Importance:**  
+            - `hourly_count`, hour of day, and coordinates were most influential.
+            """)
+
 if page == pages[4] :
 
     st.markdown("""
@@ -507,13 +486,13 @@ if page == pages[4] :
 
         ### **Evaluations**        
     """)
-      
+
     col1, col2 = st.columns(2)
 
     if col1.button("For Hourly Count Analysis"):
         st.markdown("""   
                     The Random Forest model’s superior performance highlights the relevance of cyclical time variables in predicting traffic volume. It shows that time-of-day, weekday, and location significantly shape traffic patterns. These insights support policies such as timed bike-lane allocation and resource distribution during peak hours.
-         """)      
+        """)      
 
     if col2.button("For Directional Flow and Route-Level Imbalance Analysis"):
         st.markdown("""   
