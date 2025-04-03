@@ -165,6 +165,7 @@ if page == pages[2] :
                 To gain an initial understanding of bicycle behavior:
 
                 - Daily traffic trends revealed a significant drop in weekend cycling, consistent with reduced commuting.
+                - Seasonal traffic analysis showed summer months experiencing over twice the volume of winter, reinforcing weather's influence on biking behavior.  
                 """)
     # Convert to datetime
     df_directional["date_time_utc_plus_2"] = pd.to_datetime(df_directional["date_time_utc_plus_2"])
@@ -214,7 +215,6 @@ if page == pages[2] :
     st.plotly_chart(fig_seasonal, use_container_width=True)
 
     st.markdown(""" 
-                - Seasonal traffic analysis showed summer months experiencing over twice the volume of winter, reinforcing weather's influence on biking behavior.  
                 - Monthly trends highlighted a dip in August due to holiday periods.    
                 - ADD EXPLANATION OF PIE CHART HERE
                 """)
