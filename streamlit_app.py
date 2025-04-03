@@ -285,23 +285,21 @@ if page == pages[3] :
             """)
     col1, col2 = st.columns(2)  
     if col1.button("For Hourly Count Analysis"):
+        st.write("#### 1. Hourly Count Prediction")
         st.markdown("""
-                    **1. Hourly Count Prediction**
-
                     - Goal: Predict hourly bicycle traffic volume.
 
                     - Models: RandomForestRegressor and XGBRegressor
-
-                    **Preprocessing:**
-
+                    """)
+        st.write("#### Preprocessing:")
+        st.markdown("""
                     - Extracted year, month, day, hour, and season from timestamps.
 
                     - One-hot encoded categorical variables (e.g., location).
 
                     - Scaled numerical features.
-
-                    **Results**
                 """)
+        st.write("#### Results")
         # Define your data
         data = {
             "R² train": [0.98, 0.78],
@@ -501,7 +499,7 @@ if page == pages[3] :
                     'Feature': st.session_state.X_test.columns,
                     'Importance': feature_importance
                 }).sort_values(by='Importance', ascending=True)  # Ascending for horizontal plot
-            
+
                 # Plot using Plotly
                 fig_importance = px.bar(
                     importance_df,
@@ -512,7 +510,7 @@ if page == pages[3] :
                     labels={'Importance': 'Feature Importance', 'Feature': 'Feature'},
                     height=500
                 )
-            
+
                 st.plotly_chart(fig_importance, use_container_width=True)
 
 if page == pages[4] :
