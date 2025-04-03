@@ -237,65 +237,54 @@ if page == pages[2] :
           "se-no": "sum",
           "no-se": "sum"
       }).reset_index()
-
+  
       # Net flow per direction pair
       grouped["Flow_SO_NE"] = grouped["so-ne"] - grouped["ne-so"]
       grouped["Flow_SE_NO"] = grouped["se-no"] - grouped["no-se"]
-
+  
       # Total net flow
       grouped["Total_Flow_Imbalance"] = grouped["Flow_SO_NE"] + grouped["Flow_SE_NO"]
-
-      # Dominant direction
-      grouped["Dominant_Direction"] = grouped["Total_Flow_Imbalance"].apply(
-          lambda x: "Dominant_Direction" if x > 0 else "Flow_Direction"
-      )
-
-      # Sort by absolute imbalance
-      grouped = grouped.reindex(
-          grouped["Total_Flow_Imbalance"].abs().sort_values(ascending=False).index
-      ).head(top_n)
-
-      return grouped
-
-  # --- Streamlit UI ---
+  
+      # Absolute net imbalance for cleaner plot
+      grouped["Net_Imbalance"] = grouped["Total_Flow_Imbalance"].abs()
+  
+      # Sort by absolute value
+      grouped = grouped.sort_values("Net_Imbalance", ascending=False).head(top_n)
+  
+      return grouped  
+    # --- Streamlit UI ---
   st.title("Directional Flow Imbalance by Route")
-  st.write("This chart shows the top routes in Paris by the imbalance of bicycle traffic flow between directions.")
-
+  st.write("This chart shows the top routes in Paris with the largest directional bicycle traffic imbalance.")
+  
   top_n = st.slider("Number of top routes to display", 5, 30, 20)
   df_flow = prepare_directional_flow(df_directional, top_n=top_n)
-
+  
   # --- Plot ---
   fig = px.bar(
       df_flow,
-      x="Total_Flow_Imbalance",
+      x="Net_Imbalance",
       y="base_route",
       orientation="h",
-      color="Dominant_Direction",
       title="Top Routes by Net Directional Flow Imbalance",
       labels={
-          "Total_Flow_Imbalance": "Net Flow (Dominant_Direction - Flow_Direction)",
-          "base_route": "Route",
-          "Dominant_Direction": "Dominant Direction"
-      },
-      color_discrete_map={"Dominant_Direction": "#1f77b4", "Flow_Direction": "#ff7f0e"}
+          "Net_Imbalance": "Absolute Net Flow Imbalance",
+          "base_route": "Route"
+      }
   )
-
+  
   fig.update_layout(
       yaxis=dict(autorange="reversed"),
       margin=dict(l=200, r=20, t=60, b=40),
       font=dict(family="Arial", size=14),
       xaxis_tickformat=".2s"
   )
-
+  
   st.plotly_chart(fig, use_container_width=True)
 
 
   st.markdown("""
 
               - Major flow imbalances are concentrated along a few key routes like **quai de la Tournelle** and **boulevard Masséna**, suggesting these corridors have highly directional commuting patterns (likely tied to peak-hour flows in and out of central Paris).
-
-              - Flow Direction-dominant routes, such as **quai de Grenelle** and **Pont National**, indicate strong return traffic patterns, possibly reflecting evening commute behaviors or residential-to-workplace movement.
-
 
               """)
 if page == pages[3] :
