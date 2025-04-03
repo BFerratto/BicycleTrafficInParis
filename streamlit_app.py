@@ -14,6 +14,8 @@ import sklearn
 import requests
 from io import BytesIO
 import io
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+
 
 @st.cache_data
 def load_main_data():
@@ -375,30 +377,9 @@ if page == pages[3] :
           **Results:**
       """)
 
-      # Define your data
-      data = {
-          "R²": [0.82, 0.40],
-          "MAE": [7.96, 20.17],
-          "RMSE": [19.86, 36.53]
-      }
-      index = ["RFR", "LR"]
+      ## MOVE RESULTS HERE
+    
 
-      df_ml_direction = pd.DataFrame(data, index=index)
-
-      # Optional: apply styling
-      styled_df = df_ml_direction.style.set_table_styles([
-          {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
-          {"selector": "td", "props": [("text-align", "center")]}
-      ]).format("{:.2f}")
-
-      st.dataframe(styled_df, use_container_width=True)
-
-      st.markdown("""
-          - Random Forest achieved an R² of 0.82, significantly outperforming Linear Regression (R² = 0.40).
-
-          - MAE and RMSE were less than half of those for Linear Regression.
-      """)
-      
       # Hugging Face URLs
       lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
       test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
@@ -418,38 +399,21 @@ if page == pages[3] :
       for key in ["rf_model", "lr_model", "X_test", "y_test"]:
           if key not in st.session_state:
               st.session_state[key] = None
-
+  
       # Buttons to load each file
       if st.button("Load Random Forest Model"):
           with st.spinner("Loading Random Forest model..."):
               st.session_state.rf_model = load_joblib_from_url(rf_url)
-
+  
       if st.button("Load Linear Regression Model"):
           with st.spinner("Loading Linear Regression model..."):
               st.session_state.lr_model = load_joblib_from_url(lr_url)
-
+  
       if st.button("Load Test Data"):
           with st.spinner("Loading test data..."):
               test_data = load_joblib_from_url(test_data_url)
               st.session_state.X_test, st.session_state.y_test = test_data
-
-      # Run predictions if everything is ready
-      if all([
-          st.session_state.rf_model,
-          st.session_state.lr_model,
-          st.session_state.X_test is not None,
-          st.session_state.y_test is not None
-      ]):
-          # Run predictions if everything is ready
-        if all([
-            st.session_state.rf_model,
-            st.session_state.lr_model,
-            st.session_state.X_test is not None,
-            st.session_state.y_test is not None
-        ]):
-            # (Your prediction + plotting code goes here)
-            pass
-
+  
       # Run predictions if everything is ready
       if all([
           st.session_state.rf_model,
@@ -459,46 +423,80 @@ if page == pages[3] :
       ]):
           y_pred_lr = st.session_state.lr_model.predict(st.session_state.X_test)
           y_pred_rf = st.session_state.rf_model.predict(st.session_state.X_test)
-
-          df_plot = pd.DataFrame({
-              "Actual": st.session_state.y_test,
-              "Random Forest": y_pred_rf,
-              "Linear Regression": y_pred_lr
-          })
-
-          df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")
-
-          fig = px.scatter(
-              df_melted,
-              x="Actual",
-              y="Predicted",
-              color="Model",
-              opacity=0.6,
-              labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
-              title="Actual vs. Predicted Values"
-          )
-
-          min_val = df_melted["Actual"].min()
-          max_val = df_melted["Actual"].max()
-
-          fig.add_trace(
-              go.Scatter(
-                  x=[min_val, max_val],
-                  y=[min_val, max_val],
-                  mode="lines",
-                  line=dict(dash="dash", color="black"),
-                  name="Perfect Fit"
-              )
-          )
-
-          st.plotly_chart(fig, use_container_width=True)
-          pass
-          st.markdown("""
-          **Feature Importance:**  
-          - `hourly_count`, hour of day, and coordinates were most influential.
+  
+          # Your metrics dictionary
+          metrics = {
+              "R²": [
+                  r2_score(st.session_state.y_test, y_pred_rf),
+                  r2_score(st.session_state.y_test, y_pred_lr)
+              ],
+              "MAE": [
+                  mean_absolute_error(st.session_state.y_test, y_pred_rf),
+                  mean_absolute_error(st.session_state.y_test, y_pred_lr)
+              ],
+              "RMSE": [
+                  mean_squared_error(st.session_state.y_test, y_pred_rf, squared=False),
+                  mean_squared_error(st.session_state.y_test, y_pred_lr, squared=False)
+              ]
+          }
+          
+          # Create DataFrame
+          index = ["RFR", "LR"]
+          df_metrics = pd.DataFrame(metrics, index=index)
+          
+          # Now access values with .loc
+          r2_rf = df_metrics.loc["RFR", "R²"]
+          r2_lr = df_metrics.loc["LR", "R²"]
+          mae_rf = df_metrics.loc["RFR", "MAE"]
+          mae_lr = df_metrics.loc["LR", "MAE"]
+          rmse_rf = df_metrics.loc["RFR", "RMSE"]
+          rmse_lr = df_metrics.loc["LR", "RMSE"]
+          
+          # Dynamic text display
+          st.markdown(f"""
+          - Random Forest achieved an R² of **{r2_rf:.2f}**, significantly outperforming Linear Regression (**{r2_lr:.2f}**).
+          - MAE: **{mae_rf:.2f}** (RFR) vs **{mae_lr:.2f}** (LR)
+          - RMSE: **{rmse_rf:.2f}** (RFR) vs **{rmse_lr:.2f}** (LR)
           """)
-
-
+                
+      index = ["RFR", "LR"]
+      df_metrics = pd.DataFrame(metrics, index=index)  
+      styled_df = df_metrics.style.set_table_styles([
+          {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
+          {"selector": "td", "props": [("text-align", "center")]}
+      ]).format("{:.2f}")  
+      st.dataframe(styled_df, use_container_width=True)  
+      df_plot = pd.DataFrame({
+          "Actual": st.session_state.y_test,
+          "Random Forest": y_pred_rf,
+          "Linear Regression": y_pred_lr
+      })  
+      df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")  
+      fig = px.scatter(
+          df_melted,
+          x="Actual",
+          y="Predicted",
+          color="Model",
+          opacity=0.6,
+          labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
+          title="Actual vs. Predicted Values"
+      )  
+      min_val = df_melted["Actual"].min()
+      max_val = df_melted["Actual"].max()  
+      fig.add_trace(
+          go.Scatter(
+              x=[min_val, max_val],
+              y=[min_val, max_val],
+              mode="lines",
+              line=dict(dash="dash", color="black"),
+              name="Perfect Fit"
+          )
+      )  
+      st.plotly_chart(fig, use_container_width=True)  
+      st.markdown("""
+      **Feature Importance:**  
+      - `hourly_count`, hour of day, and coordinates were most influential.
+      """)
       
 if page == pages[4] :
 
