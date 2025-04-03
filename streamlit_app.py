@@ -216,9 +216,26 @@ if page == pages[2] :
     st.markdown(""" 
                 - Seasonal traffic analysis showed summer months experiencing over twice the volume of winter, reinforcing weather's influence on biking behavior.  
                 - Monthly trends highlighted a dip in August due to holiday periods.    
-                Additional visualizations focused on directional flow differences:
-                """)    
+                - ADD EXPLANATION OF PIE CHART HERE
+                """)
+    
+    #Integer Hour
+    time_bins = [0, 6, 12, 18, 21, 24]  
+    time_labels = ['Midnight', 'Morning', 'Afternoon', 'Evening', 'Late Night']
 
+    #Timeperiod 
+    df_directional['time_period'] = pd.cut(
+        df_directional['hour'], 
+        bins=time_bins, 
+        labels=time_labels, 
+        right=False  
+    )
+    df_pie_time = df_directional.groupby('time_period', observed=True).agg({'hourly_count': 'sum'}).reset_index().sort_values(by='hourly_count')
+    fig = px.pie(df_pie_time, values='hourly_count', names='time_period', title='Bike Traffic per each Timeperiod')
+    st.plotly_chart(fig)
+    st.markdown("""
+                Additional visualizations focused on directional flow differences:
+                """)
     # --- Prepare directional flow data ---
     @st.cache_data
     def prepare_directional_flow(df_directional, top_n=20):
