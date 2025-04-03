@@ -253,7 +253,7 @@ if page == pages[2] :
   
       return grouped  
     # --- Streamlit UI ---
-  st.title("Directional Flow Imbalance by Route")
+  st.write("#### Directional Flow Imbalance by Route")
   st.write("This chart shows the top routes in Paris with the largest directional bicycle traffic imbalance.")
   
   top_n = st.slider("Number of top routes to display", 5, 30, 20)
