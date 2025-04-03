@@ -397,12 +397,12 @@ if page == pages[3] :
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            if st.button("Load Light RF Model", key="load_light_rf"):
+            if st.button("Load Light Random Forest Model", key="load_light_rf"):
                 with st.spinner("Loading Light Random Forest model..."):
                     st.session_state.rf_model = load_joblib_from_url(rf_url)
 
         with col2:
-            if st.button("Load Full RF Model", key="load_full_rf"):
+            if st.button("Full Random Forest Model ( ⚠️local only)", key="load_full_rf"):
                 with st.spinner("Loading Full Random Forest model..."):
                     st.session_state.rf_model = load_joblib_from_url(full_rf_url)
                 st.success("Full Random Forest model loaded!")
