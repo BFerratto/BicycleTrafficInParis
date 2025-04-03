@@ -15,7 +15,8 @@ import requests
 from io import BytesIO
 import io
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-
+import tempfile
+import requests
 
 @st.cache_data
 def load_main_data():
@@ -358,14 +359,16 @@ if page == pages[3] :
             - Retained only routes with valid bidirectional data    
             - Created a new feature Difference  
         """)
+        # 🔹 Section Title
         st.write("##### Results")
-        ## MOVE RESULTS HERE
-    
-        # Hugging Face URLs
+
+        # 🔗 Hugging Face URLs
         lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
+        rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model_light.joblib"
+        full_rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model.joblib"
         test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
-        rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model_light.joblib"   
-        # Load function
+
+        # 🔄 Load function
         @st.cache_resource
         def load_joblib_from_url(url):
             response = requests.get(url, stream=True)
@@ -373,27 +376,50 @@ if page == pages[3] :
             for chunk in response.iter_content(chunk_size=8192):
                 buffer.write(chunk)
             buffer.seek(0)
-            return joblib.load(buffer)  
-        # Initialize session state for models and data
+            return joblib.load(buffer)
+
+        # 🧠 Initialize session state
         for key in ["rf_model", "lr_model", "X_test", "y_test"]:
             if key not in st.session_state:
                 st.session_state[key] = None
 
-        # Buttons to load each file
-        if st.button("Load Random Forest Model"):
-            with st.spinner("Loading Random Forest model..."):
-                st.session_state.rf_model = load_joblib_from_url(rf_url)
+        # 🎨 Red button styling for Full RF Model
+        st.markdown("""
+            <style>
+            div.stButton > button[data-testid="baseButton"][key="load_full_rf"] {
+                background-color: red !important;
+                color: white !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
 
-        if st.button("Load Linear Regression Model"):
-            with st.spinner("Loading Linear Regression model..."):
-                st.session_state.lr_model = load_joblib_from_url(lr_url)
+        # ⬇️ Model + data loading buttons
+        col1, col2, col3, col4 = st.columns(4)
 
-        if st.button("Load Test Data"):
-            with st.spinner("Loading test data..."):
-                test_data = load_joblib_from_url(test_data_url)
-                st.session_state.X_test, st.session_state.y_test = test_data
+        with col1:
+            if st.button("Load Light RF Model", key="load_light_rf"):
+                with st.spinner("Loading Light Random Forest model..."):
+                    st.session_state.rf_model = load_joblib_from_url(rf_url)
 
-        # Run predictions if everything is ready
+        with col2:
+            if st.button("Load Full RF Model", key="load_full_rf"):
+                with st.spinner("Loading Full Random Forest model..."):
+                    st.session_state.rf_model = load_joblib_from_url(full_rf_url)
+                st.success("Full Random Forest model loaded!")
+
+        with col3:
+            if st.button("Load Linear Regression", key="load_lr"):
+                with st.spinner("Loading Linear Regression model..."):
+                    st.session_state.lr_model = load_joblib_from_url(lr_url)
+
+        with col4:
+            if st.button("Load Test Data", key="load_test_data"):
+                with st.spinner("Loading test data..."):
+                    X_test, y_test = load_joblib_from_url(test_data_url)
+                    st.session_state.X_test = X_test
+                    st.session_state.y_test = y_test
+
+        # ✅ Run predictions and show results if all components are loaded
         if all([
             st.session_state.rf_model,
             st.session_state.lr_model,
@@ -403,7 +429,6 @@ if page == pages[3] :
             y_pred_lr = st.session_state.lr_model.predict(st.session_state.X_test)
             y_pred_rf = st.session_state.rf_model.predict(st.session_state.X_test)
 
-            # Your metrics dictionary
             metrics = {
                 "R²": [
                     r2_score(st.session_state.y_test, y_pred_rf),
@@ -419,38 +444,31 @@ if page == pages[3] :
                 ]
             }
 
-            # Create DataFrame
             index = ["RFR", "LR"]
             df_metrics = pd.DataFrame(metrics, index=index)
-            
-            # Now access values with .loc
-            r2_rf = df_metrics.loc["RFR", "R²"]
-            r2_lr = df_metrics.loc["LR", "R²"]
-            mae_rf = df_metrics.loc["RFR", "MAE"]
-            mae_lr = df_metrics.loc["LR", "MAE"]
-            rmse_rf = df_metrics.loc["RFR", "RMSE"]
-            rmse_lr = df_metrics.loc["LR", "RMSE"]
-            
-            # Dynamic text display
+
+            # ✨ Highlighted comparison
             st.markdown(f"""
-            Random Forest achieved an R² of **{r2_rf:.2f}**, significantly outperforming Linear Regression (**{r2_lr:.2f}**).
-            MAE: **{mae_rf:.2f}** (RFR) vs **{mae_lr:.2f}** (LR)
-            RMSE: **{rmse_rf:.2f}** (RFR) vs **{rmse_lr:.2f}** (LR)
+                Random Forest achieved an R² of **{df_metrics.loc['RFR', 'R²']:.2f}**, outperforming Linear Regression (**{df_metrics.loc['LR', 'R²']:.2f}**).  
+                MAE: **{df_metrics.loc['RFR', 'MAE']:.2f}** (RFR) vs **{df_metrics.loc['LR', 'MAE']:.2f}** (LR)  
+                RMSE: **{df_metrics.loc['RFR', 'RMSE']:.2f}** (RFR) vs **{df_metrics.loc['LR', 'RMSE']:.2f}** (LR)
             """)
-                
-            index = ["RFR", "LR"]
-            df_metrics = pd.DataFrame(metrics, index=index)  
+
+            # 📊 Styled metrics table
             styled_df = df_metrics.style.set_table_styles([
                 {"selector": "th", "props": [("background-color", "#42A5F5"), ("color", "white"), ("font-weight", "bold")]},
                 {"selector": "td", "props": [("text-align", "center")]}
-            ]).format("{:.2f}")  
-            st.dataframe(styled_df, use_container_width=True)  
+            ]).format("{:.2f}")
+            st.dataframe(styled_df, use_container_width=True)
+
+            # 📈 Plot: Actual vs Predicted
             df_plot = pd.DataFrame({
                 "Actual": st.session_state.y_test,
                 "Random Forest": y_pred_rf,
                 "Linear Regression": y_pred_lr
-            })  
-            df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")  
+            })
+            df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")
+
             fig = px.scatter(
                 df_melted,
                 x="Actual",
@@ -459,9 +477,9 @@ if page == pages[3] :
                 opacity=0.6,
                 labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
                 title="Actual vs. Predicted Values"
-            )  
+            )
             min_val = df_melted["Actual"].min()
-            max_val = df_melted["Actual"].max()  
+            max_val = df_melted["Actual"].max()
             fig.add_trace(
                 go.Scatter(
                     x=[min_val, max_val],
@@ -470,7 +488,7 @@ if page == pages[3] :
                     line=dict(dash="dash", color="black"),
                     name="Perfect Fit"
                 )
-            )  
+            )
             st.plotly_chart(fig, use_container_width=True)  
             st.markdown("""
             **Feature Importance:**  
