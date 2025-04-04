@@ -168,7 +168,7 @@ if page == pages[2] :
                 To gain an initial understanding of bicycle behavior:
 
                 - Daily traffic trends revealed a significant drop in weekend cycling, consistent with reduced commuting.
-                - Seasonal traffic analysis showed summer months experiencing over twice the volume of winter, reinforcing weather's influence on biking behavior.  
+                - Fall had the highest total bike counts overall, followed closely by Summer and Spring, while Winter had significantly lower traffic — likely due to weather-related factors.
                 """)
     # Convert to datetime
     df_directional["date_time_utc_plus_2"] = pd.to_datetime(df_directional["date_time_utc_plus_2"])
