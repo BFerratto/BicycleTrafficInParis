@@ -17,6 +17,8 @@ import io
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 import tempfile
 import requests
+from plotly.subplots import make_subplots
+
 
 @st.cache_data
 def load_main_data():
@@ -90,7 +92,7 @@ if page == pages[0] :
         mapbox_style="carto-positron")  
     fig.update_layout(title='Counter locations in Paris recording the number of bycicles from October 2023 up to September 2024', width=1000, height=600,
 
-                coloraxis_colorbar=dict(title="Total counts"))
+    coloraxis_colorbar=dict(title="Total counts"))
 
     # Anzeige des Diagramms in Streamlit
     st.plotly_chart(fig)
@@ -158,6 +160,7 @@ if page == pages[1]:
                 Columns maintained:
     """)
     st.dataframe(df_main.columns[:6])
+    colors = ['#1f77b4' if month not in ['07(24)', '08(24)'] else '#A6C8FF' for month in counts_per_month['month']]
 
 if page == pages[2] :
     st.write("### 📈 Data Visualization")
@@ -169,6 +172,7 @@ if page == pages[2] :
                 """)
     # Convert to datetime
     df_directional["date_time_utc_plus_2"] = pd.to_datetime(df_directional["date_time_utc_plus_2"])
+    df_main["date_time_utc_plus_2"] = pd.to_datetime(df_main["date_time_utc_plus_2"])
 
     # Create 'season' column from month
     def get_season(month):
@@ -225,6 +229,80 @@ if page == pages[2] :
         hover_data=["total_counts", "average_per_weekday"]
         ) 
     st.plotly_chart(fig_seasonal, use_container_width=True)
+    
+    #Preprocessing plot Total Counts per month per season
+    # Convert datetime and extract month-year and season
+    df_main["date_time_utc_plus_2"] = pd.to_datetime(df_main["date_time_utc_plus_2"])
+    df_main["month_year"] = df_main["date_time_utc_plus_2"].dt.strftime("%Y-%m")
+    df_main["season"] = df_main["date_time_utc_plus_2"].dt.month.map(get_season)
+    
+    # Group by month-year
+    monthly_counts = (
+        df_main.groupby("month_year")["hourly_count"]
+        .sum()
+        .reset_index(name="total_counts")
+    )
+    monthly_counts["month_dt"] = pd.to_datetime(monthly_counts["month_year"])
+    monthly_counts = monthly_counts.sort_values("month_dt")
+    # Group by season
+    seasonal_counts = (
+        df_main.groupby("season")["hourly_count"]
+        .sum()
+        .reset_index(name="total_counts")
+    )
+    seasonal_counts["season"] = pd.Categorical(seasonal_counts["season"], 
+                                            categories=["Winter", "Spring", "Summer", "Fall"],
+                                            ordered=True)
+
+    # Custom colors (light blue for July and August 2024)
+    highlight_months = ['2024-07', '2024-08']
+    colors = ['#1f77b4' if month not in highlight_months else '#A6C8FF' for month in monthly_counts['month_year']]
+
+    import plotly.graph_objects as go
+
+    # Create subplot with 2 plots side by side
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=("Monthly Counts", "Seasonal Counts")
+    )
+
+    # Monthly bar chart
+    fig.add_trace(
+        go.Bar(
+            x=monthly_counts["month_year"],
+            y=monthly_counts["total_counts"],
+            marker=dict(color=colors)
+        ),
+        row=1, col=1
+    )
+
+    # Seasonal bar chart
+    fig.add_trace(
+        go.Bar(
+            x=seasonal_counts["season"],
+            y=seasonal_counts["total_counts"],
+            marker=dict(color='#ff7f0e')
+        ),
+        row=1, col=2
+    )
+
+    # Layout and formatting
+    fig.update_layout(
+        title_text="Total Counts per Month and per Season",
+        showlegend=False,
+        height=500,
+        width=1000,
+        xaxis=dict(title="Month"),
+        xaxis2=dict(title="Season"),
+        yaxis=dict(title="Counts"),
+        yaxis2=dict(title="Counts"),
+        template="plotly_white",
+        yaxis_tickformat='.2e'
+    )
+
+    # Display in Streamlit
+    st.plotly_chart(fig)
+
 
     st.markdown(""" 
                 - Monthly trends highlighted a dip in August due to holiday periods.    
