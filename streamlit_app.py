@@ -442,6 +442,20 @@ if page == pages[3] :
 
 
                     """)
+        st.write("#### 2. Hourly Count Prediction per time period")
+        st.markdown("""
+                    - Goal: WRITE SOMETHING HERE
+
+                    - Models: WRITE SOMETHING HERE
+                    """)
+        st.write("#### Preprocessing:")
+        st.markdown("""
+                    - WRITE SOMETHING HERE
+                """)
+        st.write("#### Results")
+        st.markdown("""
+                    - WRITE SOMETHING HERE
+                """)
     # Initialize session state
     if "show_directional_ml" not in st.session_state:
         st.session_state.show_directional_ml = False
@@ -452,7 +466,7 @@ if page == pages[3] :
         
     # Show the section only if state is True
     if st.session_state.show_directional_ml:
-        st.write("#### 2. Directional Flow Difference Prediction")
+        st.write("#### Directional Flow Difference Prediction")
         st.markdown("""
             - Goal: Predict the difference in traffic volume between opposite directions on the same route. 
             - Models: RandomForestRegressor and Linear Regression
