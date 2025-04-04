@@ -306,7 +306,7 @@ if page == pages[2] :
 
     st.markdown(""" 
                 - Monthly trends highlighted a dip in August due to holiday periods.    
-                - ADD EXPLANATION OF PIE CHART HERE
+                - Bike traffic is most active during the day, with over half of all rides occurring in the Afternoon (30.7%) and Morning (27.2%) together, while nighttime periods (Late Night + Midnight) account for only ~16% of total traffic.
                 """)
     
     #Integer Hour
