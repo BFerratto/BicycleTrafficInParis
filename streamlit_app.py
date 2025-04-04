@@ -160,7 +160,6 @@ if page == pages[1]:
                 Columns maintained:
     """)
     st.dataframe(df_main.columns[:6])
-    colors = ['#1f77b4' if month not in ['07(24)', '08(24)'] else '#A6C8FF' for month in counts_per_month['month']]
 
 if page == pages[2] :
     st.write("### 📈 Data Visualization")
