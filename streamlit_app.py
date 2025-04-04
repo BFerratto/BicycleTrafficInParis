@@ -288,7 +288,7 @@ if page == pages[2] :
 
     # Layout and formatting
     fig.update_layout(
-        title_text="Total Counts per Month and per Season",
+        title_text="Total Counts per Month and per Season 🌻❄️🍂🌱",
         showlegend=False,
         height=500,
         width=1000,
@@ -321,7 +321,7 @@ if page == pages[2] :
         right=False  
     )
     df_pie_time = df_directional.groupby('time_period', observed=True).agg({'hourly_count': 'sum'}).reset_index().sort_values(by='hourly_count')
-    fig = px.pie(df_pie_time, values='hourly_count', names='time_period', title='Bike Traffic per each Timeperiod')
+    fig = px.pie(df_pie_time, values='hourly_count', names='time_period', title='🕔 Bike Traffic per each Time period')
     st.plotly_chart(fig)
     st.markdown("""
                 Additional visualizations focused on directional flow differences:
@@ -363,7 +363,7 @@ if page == pages[2] :
         x="Net_Imbalance",
         y="base_route",
         orientation="h",
-        title="Top Routes by Net Directional Flow Imbalance",
+        title="🔄 Top Routes by Net Directional Flow Imbalance",
         labels={
             "Net_Imbalance": "Absolute Net Flow Imbalance",
             "base_route": "Route"
