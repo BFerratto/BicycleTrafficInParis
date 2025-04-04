@@ -182,12 +182,24 @@ if page == pages[2] :
             return "Fall"
 
     df_directional["season"] = df_directional["date_time_utc_plus_2"].dt.month.map(get_season)
-    #:alert Change mean to total count mean
-    # Group by weekday and season, calculate total and average
+    # Sum hourly counts per day (not hour), across all counters
+    daily_counts = (
+        df_directional.groupby(["date_time_utc_plus_2", "weekday", "season"])["hourly_count"]
+        .sum()
+        .reset_index(name="daily_total")
+    )
+
+    # Now group by weekday and season, and compute total and average per week
     counts_by_weekday_season = (
-        df_directional.groupby(["weekday", "season"])["hourly_count"]
-        .agg(total_counts="sum", average_counts="mean")
+        daily_counts
+        .groupby(["weekday", "season"])
+        .agg(total_counts=("daily_total", "sum"))
         .reset_index()
+    )
+
+    # Divide by 52 to get the average per weekday (assuming 52 weeks)
+    counts_by_weekday_season["average_per_weekday"] = (
+        counts_by_weekday_season["total_counts"] / 52
     )
 
     # Order weekdays
@@ -201,16 +213,16 @@ if page == pages[2] :
     fig_seasonal = px.line(
         counts_by_weekday_season,
         x="weekday",
-        y="average_counts",
+        y="average_per_weekday",
         color="season",
         title="📅 Average Bicycle Counts per Weekday by Season (Oct 2023 – Sep 2024)",
         labels={
-            "average_counts": "Avg Counts",
+            "average_per_weekday": "Avg Counts per Weekday",
             "total_counts": "Total Counts",
             "weekday": "Day of Week",
             "season": "Season"
         },
-        hover_data=["total_counts", "average_counts"]
+        hover_data=["total_counts", "average_per_weekday"]
         ) 
     st.plotly_chart(fig_seasonal, use_container_width=True)
 
