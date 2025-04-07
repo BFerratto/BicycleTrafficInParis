@@ -1,24 +1,37 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
 from PIL import Image
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.datasets import make_regression
-import joblib
-import sys
-import sklearn
 import requests
 from io import BytesIO
-import io
-from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-import tempfile
-import requests
-from plotly.subplots import make_subplots
 import os
+import tempfile
+
+# Scikit-learn - Regression & Classification
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.metrics import (
+    r2_score, mean_absolute_error, mean_squared_error,
+    classification_report
+)
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn import tree
+
+# Joblib for saving/loading models
+import joblib
+
+# Imbalanced data handling
+from imblearn.over_sampling import RandomOverSampler
+
+
 
 @st.cache_data
 def load_main_data():
@@ -397,7 +410,7 @@ if page == pages[3] :
     st.markdown("""
                 Two separate ML pipelines were developed to address distinct goals.
             """)
-    col1, col2 = st.columns(2)  
+    col1, col2, col3 = st.columns(3)  
     if col1.button("For Hourly Count Analysis"):
         st.write("#### 1. Hourly Count Prediction")
         st.markdown("""
@@ -450,9 +463,149 @@ if page == pages[3] :
 
 
                     """)
+    if col2.button("Peak Hour Analysis"):
+        # Use st.cache_data for data preprocessing
+        @st.cache_data
+        def preprocess_data(df_directional):
+        
+            # Convert date columns to datetime
+            df_directional['metering_date_and_time'] = pd.to_datetime(df_directional['metering_date_and_time'], errors='coerce', utc=True)
+
+            # Extract date and time components
+            df_directional['date_time'] = pd.to_datetime(df_directional['metering_date_and_time'], errors='coerce', utc=True)
+            df_directional['hour'] = df_directional['metering_date_and_time'].dt.hour
+            df_directional['hour_time'] = df_directional['metering_date_and_time'].dt.strftime('%H:%M:%S')
+
+            return df_directional
+
+        # Use st.cache_data for data filtering and transformation
+        @st.cache_data
+        def filter_and_transform_data(df_directional):
+            # Timeperiods based on hour
+            time_bins = [0, 6, 12, 18, 21, 24]  
+            time_labels = ['Midnight', 'Morning', 'Afternoon', 'Evening', 'Late Night']
+            df_directional.loc[:, 'time_period'] = pd.cut(df_directional['hour'], bins=time_bins, labels=time_labels, right=False)
+
+            # Weekday and Month
+            df_directional.loc[:, 'month'] = df_directional['date_time'].dt.month
+            df_directional.loc[:, 'weekday_name'] = df_directional['date_time'].dt.day_name()
+            df_directional.loc[:, 'weekday_number'] = df_directional['date_time'].dt.weekday
+
+            # Categorize zones (North/South/Center)
+            def categorize_zone(latitude):
+                if latitude > 48.86:   
+                    return "North"
+                elif latitude < 48.84:
+                    return "South"
+                else:
+                    return "Center"
+
+            df_directional.loc[:, 'region'] = df_directional['latitude'].apply(categorize_zone)
+
+            return df_directional
+
+        # Use st.cache_data for peak hour determination
+        @st.cache_data
+        def add_peak_hour(df_directional):
+            df_North = df_directional[df_directional['region'] == 'North'].copy()
+            threshold = df_North['hourly_count'].quantile(0.75)  # Top 25% of traffic is Peak
+            df_North['peak_hour'] = (df_North['hourly_count'] > threshold).astype(int)
+
+            df_South = df_directional[df_directional['region'] == 'South'].copy()
+            threshold = df_South['hourly_count'].quantile(0.75)
+            df_South['peak_hour'] = (df_South['hourly_count'] > threshold).astype(int)
+
+            df_Center = df_directional[df_directional['region'] == 'Center'].copy()
+            threshold = df_Center['hourly_count'].quantile(0.75)
+            df_Center['peak_hour'] = (df_Center['hourly_count'] > threshold).astype(int)
+
+            return pd.concat([df_North, df_South, df_Center])
+        
+        df_directional = preprocess_data(df_directional)
+        df_directional = filter_and_transform_data(df_directional)
+        df_combined = add_peak_hour(df_directional)
+        new_df = df_combined[['time_period', 'month', 'weekday_name', 'hour', 'latitude', 'longitude', 'peak_hour', 'region']]
+         # Prepare data
+        X = new_df.drop(['peak_hour'], axis=1)
+        y = new_df['peak_hour']
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        cat_cols = ['time_period', 'region']
+        num_cols = ['latitude', 'longitude']
+        circular_cols = ['hour', 'weekday_name', 'month']
+
+        # Preprocessing circular features and encoding
+        def preprocess_circular_features(circular_train, circular_test):
+            # Hour
+            circular_train.loc[:, 'sin_hour'] = circular_train['hour'].apply(lambda h: np.sin(2 * np.pi * h / 24))
+            circular_train.loc[:, 'cos_hour'] = circular_train['hour'].apply(lambda h: np.cos(2 * np.pi * h / 24))
+
+            circular_test.loc[:, 'sin_hour'] = circular_test['hour'].apply(lambda h: np.sin(2 * np.pi * h / 24))
+            circular_test.loc[:, 'cos_hour'] = circular_test['hour'].apply(lambda h: np.cos(2 * np.pi * h / 24))
+
+            # Weekday
+            circular_train.loc[:, 'sin_weekday'] = circular_train['weekday_name'].map({'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}).apply(lambda h: np.sin(2 * np.pi * h / 7))
+            circular_train.loc[:, 'cos_weekday'] = circular_train['weekday_name'].map({'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}).apply(lambda h: np.cos(2 * np.pi * h / 7))
+
+            circular_test.loc[:, 'sin_weekday'] = circular_test['weekday_name'].map({'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}).apply(lambda h: np.sin(2 * np.pi * h / 7))
+            circular_test.loc[:, 'cos_weekday'] = circular_test['weekday_name'].map({'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}).apply(lambda h: np.cos(2 * np.pi * h / 7))
+
+            # Month
+            circular_train.loc[:, 'sin_month'] = circular_train['month'].apply(lambda m: np.sin(2 * np.pi * m / 12))
+            circular_train.loc[:, 'cos_month'] = circular_train['month'].apply(lambda m: np.cos(2 * np.pi * m / 12))
+
+            circular_test.loc[:, 'sin_month'] = circular_test['month'].apply(lambda m: np.sin(2 * np.pi * m / 12))
+            circular_test.loc[:, 'cos_month'] = circular_test['month'].apply(lambda m: np.cos(2 * np.pi * m / 12))
+
+            return circular_train.drop(['hour', 'weekday_name', 'month'], axis=1), circular_test.drop(['hour', 'weekday_name', 'month'], axis=1)
+        circular_train = X_train[circular_cols]
+        circular_test = X_test[circular_cols]
+
+        # Apply preprocessing
+        circular_train, circular_test = preprocess_circular_features(circular_train, circular_test)
+
+        # Imputation of missing values
+        numeric_imputer = SimpleImputer(strategy='median')
+        categorical_imputer = SimpleImputer(strategy='most_frequent')
+
+        num_train_imputed = numeric_imputer.fit_transform(X_train[num_cols])
+        num_test_imputed = numeric_imputer.transform(X_test[num_cols])
+
+        cat_train_imputed = categorical_imputer.fit_transform(X_train[cat_cols])
+        cat_test_imputed = categorical_imputer.transform(X_test[cat_cols])
+
+        num_train_imputed = pd.DataFrame(num_train_imputed, columns=num_cols)
+        cat_train_imputed = pd.DataFrame(cat_train_imputed, columns=cat_cols)
+        num_test_imputed = pd.DataFrame(num_test_imputed, columns=num_cols)
+        cat_test_imputed = pd.DataFrame(cat_test_imputed, columns=cat_cols)
+
+        X_train_imputed = pd.concat([num_train_imputed, cat_train_imputed, circular_train], axis=1)
+        X_test_imputed = pd.concat([num_test_imputed, cat_test_imputed, circular_test], axis=1)
+
+        # One-Hot Encoding of categorical features
+        encoder = OneHotEncoder(sparse_output=False, drop='first')
+        cat_train_encoded = encoder.fit_transform(cat_train_imputed)
+        cat_test_encoded = encoder.transform(cat_test_imputed)
+
+        cat_train_encoded = pd.DataFrame(cat_train_encoded, columns=encoder.get_feature_names_out(cat_cols))
+        cat_test_encoded = pd.DataFrame(cat_test_encoded, columns=encoder.get_feature_names_out(cat_cols))
+
+        X_train_encoded = pd.concat([num_train_imputed, cat_train_encoded], axis=1)
+        X_test_encoded = pd.concat([num_test_imputed, cat_test_encoded], axis=1)
+
+        # Standardizing the data
+        scaler = StandardScaler()
+        X_train_encoded = scaler.fit_transform(X_train_encoded)
+        X_test_encoded = scaler.transform(X_test_encoded)
+
+        # Model Training - Decision Tree
+        clf = tree.DecisionTreeClassifier()
+        clf.fit(X_train_encoded, y_train)
         
     
-        st.write("#### 2. Peak Hour Prediction")
+    
+        st.write("#### Peak Hour Prediction")
         st.markdown("""
                     - Goal: Predict if a given hour is a peak hour
 
@@ -465,6 +618,43 @@ if page == pages[3] :
                     - A binary feature is created: 1 for peak hour, 0 non-peak hour
                 """)
         st.write("#### Results")
+        st.subheader("Decision Tree")
+
+        st.write('Decision Tree Score on Train Set:', clf.score(X_train_encoded, y_train))
+        st.write('Decision Tree Score on Test Set:', clf.score(X_test_encoded, y_test))
+
+        y_pred = clf.predict(X_test_encoded)
+        st.write("Confusion Matrix for Decision Tree:")
+        st.write(pd.crosstab(y_test, y_pred, rownames=['True'], colnames=['Prediction']))
+
+        st.write("Classification Report for Decision Tree:")
+        st.text(classification_report(y_test, y_pred, zero_division=1))
+        # Model Training - Random Forest
+        st.subheader("Random Forest")
+
+        # Use class weights to handle the class imbalance instead of oversampling
+        rf = RandomForestClassifier(class_weight='balanced')  # Automatically adjusts weights based on class distribution
+
+        # Fit the model to the original data (without resampling)
+        rf.fit(X_train_encoded, y_train)
+
+        # Display the model performance on the train set
+        st.write('Random Forest Score on Train Set:', rf.score(X_train_encoded, y_train))
+
+        # Display the model performance on the test set
+        st.write('Random Forest Score on Test Set:', rf.score(X_test_encoded, y_test))
+
+        # Make predictions on the test set
+        y_pred = rf.predict(X_test_encoded)
+
+        # Display confusion matrix for the Random Forest model
+        st.write("Confusion Matrix for Random Forest:")
+        confusion_matrix = pd.crosstab(y_test, y_pred, rownames=['True'], colnames=['Prediction'])
+        st.write(confusion_matrix)
+
+        # Display classification report for the Random Forest model
+        st.write("Classification Report for Random Forest:")
+        st.text(classification_report(y_test, y_pred, zero_division=1))
         st.markdown("""
                     - The Decision Tree model performs well in predicting peak hours but is more accurate in identifying non-peak hours. The model's accuracy on the test set is strong, with a balanced precision and recall for non-peak hours. However, it struggles with predicting peak hours, as shown by the lower recall and F1-score for the peak hour class.
                 """)
@@ -473,7 +663,7 @@ if page == pages[3] :
         st.session_state.show_directional_ml = False
     
     # Button to toggle section visibility
-    if col2.button("For Directional Flow and Route-Level Imbalance Analysis", key="toggle_directional_section"):
+    if col3.button("For Directional Flow and Route-Level Imbalance Analysis", key="toggle_directional_section"):
         st.session_state.show_directional_ml = not st.session_state.show_directional_ml  # Toggle the state
         
     # Show the section only if state is True
