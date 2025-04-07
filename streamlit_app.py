@@ -46,6 +46,14 @@ def load_directional_data():
 df_main = load_main_data()
 df_directional = load_directional_data()
 
+import sklearn
+import joblib
+import sys
+
+st.write("Python version:", sys.version)
+st.write("scikit-learn version:", sklearn.__version__)
+st.write("joblib version:", joblib.__version__)
+
 # Page Title & Sidebar
 st.title("🚲 Analysis of Bicycle Traffic in Paris")
 st.sidebar.title("Contents")
@@ -850,15 +858,15 @@ if page == pages[3] :
             # Feature Importance Plot for Random Forest
             if st.session_state.rf_model is not None and hasattr(st.session_state.rf_model, "feature_importances_"):
                 feature_importance = st.session_state.rf_model.feature_importances_
-                
+
                 importance_df = pd.DataFrame({
                     'Feature': st.session_state.X_test.columns,
                     'Importance': feature_importance
                 }).sort_values(by='Importance', ascending=False)  # Sort by descending importance
-            
+
                 # Keep top 5 features
                 top_features_df = importance_df.head(5).sort_values(by='Importance', ascending=True)  # Re-sort for horizontal bar
-            
+
                 # Plot using Plotly
                 fig_importance = px.bar(
                     top_features_df,
@@ -869,7 +877,7 @@ if page == pages[3] :
                     labels={'Importance': 'Feature Importance', 'Feature': 'Feature'},
                     height=400
                 )
-            
+
                 st.plotly_chart(fig_importance, use_container_width=True)
 
 if page == pages[4] :
