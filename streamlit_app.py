@@ -132,19 +132,27 @@ if page == pages[0] :
 
 if page == pages[1]:
     st.write('### 🔍 Exploration & Description')
+    st.markdown('<a href="https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name" target="_blank" style="color:blue; text-decoration:none;">Link to Data</a>', unsafe_allow_html=True)
+    
+    st.write("The underlying data set contains detailed records of the bicycle traffic in Paris, collected from various automated counters installed across the city. "
+             "The data is provided as numerical, categorical and cyclical time-based information in the form of a table as a "
+             "CSV file. The original language is French and provided by the city of Paris. The primary focus of the data set is to track the number of bicycles passing a specific counting "
+             "station (Meter) at a given time. The raw data set has 943512 entries subdivided into 16 columns. The analysis focuses on the bicycle traffic volume, represented by the 'Hourly count' variable."
+             "  \nKey attributes of the raw data set include:")
+
+
     st.markdown("""
-                The dataset, sourced from opendata.paris.fr, consists of over 940,000 entries covering October 2023 to September 2024. It includes information on:
 
-                - Bicycle count per hour (`Comptage horaire`)
+        - **Counter Identification**: Unique identifiers for each bicycle counter 
 
-                - Meter location and identifiers
+        - **Location Information**: Names and identifiers of the counting sites
 
-                - Timestamp (`Date et heure de comptage`)
-                - Geographic coordinates
-                - Metadata (e.g., photo links, installation dates)
-                
-                - A link to the original Data:
-                """)
+        - **Time-based Data**: Exact timestamps of each measurement
+
+        - **Traffic Count**: Number of bicycles recorded per time interval
+
+        - **Metadata**: Additional attributes such as installation dates, photo links, and image types
+        """)
     
     st.markdown('<a href="https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name" target="_blank" style="color:blue; text-decoration:none;">Link to Data</a>', unsafe_allow_html=True)
     st.write("Exemplary data extract")
@@ -169,18 +177,8 @@ if page == pages[1]:
     df_ex = pd.DataFrame(data_example)
     st.dataframe(df_ex)
     st.markdown("""
-                
-                After translation from French and cleaning, 16 columns were retained, providing temporal, spatial, and categorical features relevant to understanding traffic patterns. Columns like `metering_site_installation_date` and redundant photo identifiers were removed to enhance processing efficiency.
-
-                **Pre-processing**
-
-                The period from October 2023 to September 2024 was isolated to obtain an exact period of one year. Afterward, the index of the columns was reset. 
-
                 Two extreme values of `hourly_count` (8190 and 2047) have been filtered out. These high counts were both generated on October 22, 2023. On this date, bicycle traffic in Paris was particularly heavy, as the "Fête du Vélo", an annual festival in honor of the bicycle, took place on this day. These two values are not representative of the normal bicycle traffic.
-
-                Columns maintained:
     """)
-    st.dataframe(df_main.columns[:6])
 
 if page == pages[2] :
     st.write("### 📈 Data Visualization")
