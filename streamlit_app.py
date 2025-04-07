@@ -329,15 +329,16 @@ if page == pages[2] :
     #Integer Hour
     time_bins = [0, 6, 12, 18, 21, 24]  
     time_labels = ['Midnight', 'Morning', 'Afternoon', 'Evening', 'Late Night']
-
+    df_main['metering_date_and_time'] = pd.to_datetime(df_main['metering_date_and_time'], errors='coerce', utc=True)
+    df_main['hour'] = df_main['metering_date_and_time'].dt.hour
     #Timeperiod 
-    df_directional['time_period'] = pd.cut(
-        df_directional['hour'], 
+    df_main['time_period'] = pd.cut(
+        df_main['hour'], 
         bins=time_bins, 
         labels=time_labels, 
         right=False  
     )
-    df_pie_time = df_directional.groupby('time_period', observed=True).agg({'hourly_count': 'sum'}).reset_index().sort_values(by='hourly_count')
+    df_pie_time = df_main.groupby('time_period', observed=True).agg({'hourly_count': 'sum'}).reset_index().sort_values(by='hourly_count')
     fig = px.pie(df_pie_time, values='hourly_count', names='time_period', title='🕔 Bike Traffic per each Time period')
     st.plotly_chart(fig)
     st.markdown("""
