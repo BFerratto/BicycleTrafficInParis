@@ -46,14 +46,6 @@ def load_directional_data():
 df_main = load_main_data()
 df_directional = load_directional_data()
 
-import sklearn
-import joblib
-import sys
-
-st.write("Python version:", sys.version)
-st.write("scikit-learn version:", sklearn.__version__)
-st.write("joblib version:", joblib.__version__)
-
 # Page Title & Sidebar
 st.title("🚲 Analysis of Bicycle Traffic in Paris")
 st.sidebar.title("Contents")
@@ -141,10 +133,10 @@ if page == pages[0] :
 if page == pages[1]:
     st.write('### 🔍 Exploration & Description')    
     st.write("The underlying data set contains detailed records of the bicycle traffic in Paris, collected from various automated counters installed across the city. "
-             "The data is provided as numerical, categorical and cyclical time-based information in the form of a table as a "
-             "CSV file. The original language is French and provided by the city of Paris. The primary focus of the data set is to track the number of bicycles passing a specific counting "
-             "station (Meter) at a given time. The raw data set has 943512 entries subdivided into 16 columns. The analysis focuses on the bicycle traffic volume, represented by the 'Hourly count' variable."
-             "  \nKey attributes of the raw data set include:")
+            "The data is provided as numerical, categorical and cyclical time-based information in the form of a table as a "
+            "CSV file. The original language is French and provided by the city of Paris. The primary focus of the data set is to track the number of bicycles passing a specific counting "
+            "station at a given time. The raw data set has 943512 entries subdivided into 16 columns. The analysis focuses on the bicycle traffic volume, represented by the 'Hourly count' variable."
+            "  \nKey attributes of the raw data set include:")
 
 
     st.markdown("""
@@ -416,7 +408,7 @@ if page == pages[3] :
                 Two separate ML pipelines were developed to address distinct goals.
             """)
     col1, col2, col3 = st.columns(3)  
-    if col1.button("For Hourly Count Analysis"):
+    if col1.button("Hourly Count Analysis"):
         st.write("#### 1. Hourly Count Prediction")
         st.markdown("""
                     - Goal: Prediction of hourly counts bicycle traffic volume
@@ -508,30 +500,34 @@ if page == pages[3] :
     if col2.button("Peak Hour Analysis"):
         # Use st.cache_data for data preprocessing
         @st.cache_data
-        def preprocess_data(df_directional):
+        def preprocess_data(df_main):
         
             # Convert date columns to datetime
-            df_directional['metering_date_and_time'] = pd.to_datetime(df_directional['metering_date_and_time'], errors='coerce', utc=True)
+            df_main['metering_date_and_time'] = pd.to_datetime(df_main['metering_date_and_time'], errors='coerce', utc=True)
 
             # Extract date and time components
-            df_directional['date_time'] = pd.to_datetime(df_directional['metering_date_and_time'], errors='coerce', utc=True)
-            df_directional['hour'] = df_directional['metering_date_and_time'].dt.hour
-            df_directional['hour_time'] = df_directional['metering_date_and_time'].dt.strftime('%H:%M:%S')
+            df_main['date_time'] = pd.to_datetime(df_main['metering_date_and_time'], errors='coerce', utc=True)
+            df_main['hour'] = df_main['metering_date_and_time'].dt.hour
+            df_main['hour_time'] = df_main['metering_date_and_time'].dt.strftime('%H:%M:%S')
 
-            return df_directional
+            return df_main
 
         # Use st.cache_data for data filtering and transformation
         @st.cache_data
-        def filter_and_transform_data(df_directional):
+        def filter_and_transform_data(df_main):
             # Timeperiods based on hour
             time_bins = [0, 6, 12, 18, 21, 24]  
             time_labels = ['Midnight', 'Morning', 'Afternoon', 'Evening', 'Late Night']
-            df_directional.loc[:, 'time_period'] = pd.cut(df_directional['hour'], bins=time_bins, labels=time_labels, right=False)
+            df_main.loc[:, 'time_period'] = pd.cut(df_main['hour'], bins=time_bins, labels=time_labels, right=False)
 
             # Weekday and Month
-            df_directional.loc[:, 'month'] = df_directional['date_time'].dt.month
-            df_directional.loc[:, 'weekday_name'] = df_directional['date_time'].dt.day_name()
-            df_directional.loc[:, 'weekday_number'] = df_directional['date_time'].dt.weekday
+            df_main.loc[:, 'month'] = df_main['date_time'].dt.month
+            df_main.loc[:, 'weekday_name'] = df_main['date_time'].dt.day_name()
+            df_main.loc[:, 'weekday_number'] = df_main['date_time'].dt.weekday
+            
+            # Latitude and Longitude from 'Coordinates'
+            df_main.loc[:, 'latitude'] = df_main['geographical_coordinates'].apply(lambda x: x.split(',')[0]).astype(float)
+            df_main.loc[:, 'longitude'] = df_main['geographical_coordinates'].apply(lambda x: x.split(',')[1]).astype(float)
 
             # Categorize zones (North/South/Center)
             def categorize_zone(latitude):
@@ -542,30 +538,30 @@ if page == pages[3] :
                 else:
                     return "Center"
 
-            df_directional.loc[:, 'region'] = df_directional['latitude'].apply(categorize_zone)
+            df_main.loc[:, 'region'] = df_main['latitude'].apply(categorize_zone)
 
-            return df_directional
+            return df_main
 
         # Use st.cache_data for peak hour determination
         @st.cache_data
-        def add_peak_hour(df_directional):
-            df_North = df_directional[df_directional['region'] == 'North'].copy()
+        def add_peak_hour(df_main):
+            df_North = df_main[df_main['region'] == 'North'].copy()
             threshold = df_North['hourly_count'].quantile(0.75)  # Top 25% of traffic is Peak
             df_North['peak_hour'] = (df_North['hourly_count'] > threshold).astype(int)
 
-            df_South = df_directional[df_directional['region'] == 'South'].copy()
+            df_South = df_main[df_main['region'] == 'South'].copy()
             threshold = df_South['hourly_count'].quantile(0.75)
             df_South['peak_hour'] = (df_South['hourly_count'] > threshold).astype(int)
 
-            df_Center = df_directional[df_directional['region'] == 'Center'].copy()
+            df_Center = df_main[df_main['region'] == 'Center'].copy()
             threshold = df_Center['hourly_count'].quantile(0.75)
             df_Center['peak_hour'] = (df_Center['hourly_count'] > threshold).astype(int)
 
             return pd.concat([df_North, df_South, df_Center])
         
-        df_directional = preprocess_data(df_directional)
-        df_directional = filter_and_transform_data(df_directional)
-        df_combined = add_peak_hour(df_directional)
+        df_main = preprocess_data(df_main)
+        df_main = filter_and_transform_data(df_main)
+        df_combined = add_peak_hour(df_main)
         new_df = df_combined[['time_period', 'month', 'weekday_name', 'hour', 'latitude', 'longitude', 'peak_hour', 'region']]
          # Prepare data
         X = new_df.drop(['peak_hour'], axis=1)
@@ -705,7 +701,7 @@ if page == pages[3] :
         st.session_state.show_directional_ml = False
     
     # Button to toggle section visibility
-    if col3.button("For Directional Flow and Route-Level Imbalance Analysis", key="toggle_directional_section"):
+    if col3.button("Directional Flow and Route-Level Imbalance Analysis", key="toggle_directional_section"):
         st.session_state.show_directional_ml = not st.session_state.show_directional_ml  # Toggle the state
         
     # Show the section only if state is True
