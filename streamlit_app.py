@@ -131,9 +131,7 @@ if page == pages[0] :
     """)
 
 if page == pages[1]:
-    st.write('### 🔍 Exploration & Description')
-    st.markdown('<a href="https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/information/?disjunctive.id_compteur&disjunctive.nom_compteur&disjunctive.id&disjunctive.name" target="_blank" style="color:blue; text-decoration:none;">Link to Data</a>', unsafe_allow_html=True)
-    
+    st.write('### 🔍 Exploration & Description')    
     st.write("The underlying data set contains detailed records of the bicycle traffic in Paris, collected from various automated counters installed across the city. "
              "The data is provided as numerical, categorical and cyclical time-based information in the form of a table as a "
              "CSV file. The original language is French and provided by the city of Paris. The primary focus of the data set is to track the number of bicycles passing a specific counting "
@@ -275,6 +273,7 @@ if page == pages[2] :
     # Custom colors (light blue for July and August 2024)
     highlight_months = ['2024-07', '2024-08']
     colors = ['#1f77b4' if month not in highlight_months else '#A6C8FF' for month in monthly_counts['month_year']]
+    seasonal_counts = seasonal_counts[seasonal_counts["season"].isin(["Summer", "Winter"])]
 
     import plotly.graph_objects as go
 
@@ -412,17 +411,18 @@ if page == pages[3] :
     if col1.button("For Hourly Count Analysis"):
         st.write("#### 1. Hourly Count Prediction")
         st.markdown("""
-                    - Goal: Predict hourly bicycle traffic volume.
-
-                    - Models: RandomForestRegressor and XGBRegressor
+                    - Goal: Prediction of hourly counts bicycle traffic volume
+                    - Variable: 'hourly count' is a continuous variable \u2192 regression problem
+                    - Models: RandomForestRegressor (**RFR**) and XGBRegressor (**XGBR**)
                     """)
         st.write("#### Preprocessing:")
         st.markdown("""
-                    - Extracted year, month, day, hour, and season from timestamps.
-
-                    - One-hot encoded categorical variables (e.g., location).
-
-                    - Scaled numerical features.
+                    - Fragmentation of "Metering date and time" variable into years, months, days, hours and seasons
+                    - Definition of target ("Hourly count") and feature variables
+                    - Split data into train (80%) and test (20%) sets
+                    - Definition of numerical and categorical variables
+                    - Encoding (OneHotEncoder) of categorical variables
+                    - Standard scaling of numerical variables
                 """)
         st.write("#### Results")
         # Define your data
@@ -448,19 +448,55 @@ if page == pages[3] :
         st.dataframe(styled_df, use_container_width=True)
         st.markdown("""
 
-                    - Random Forest outperformed XGBoost with an R² of 0.87 on the test set.
-
-                    - MAE: ~18 (Random Forest), ~27 (XGBoost)
-
-                    - MSE and cross-validation supported the robustness of Random Forest.
-
-                    **Feature Importance**
-
-                    - Time-based variables, especially `hour`, strongly influenced prediction accuracy.
-
-
-
+                    - Random Forest outperformed XGBoost with an R² of 0.87 on the test set
+                    - Fivefold cross-validation: \n
+                        **RFR** MSE = 1722.2 \n
+                        **XGBR** MSE = 2575.2
                     """)
+        st.subheader("Feature importance")
+        # GRAPHIC RFR
+        # Daten für die Features und ihre Wichtigkeit
+        features = ["hour", "day", "month"]
+        importance = [0.297465, 0.156254, 0.087202]
+
+        # Erstellen der Plotly Barplot
+        fig_RFR = go.Figure(data=[go.Bar(
+            x=features,
+            y=importance,
+            marker_color='royalblue'
+        )])
+
+        # Titel und Achsenbeschriftungen hinzufügen
+        fig_RFR.update_layout(
+            title="Top 3 features of RandomForestRegressor",
+            xaxis_title="Feature",
+            yaxis_title="Importance",
+            yaxis=dict(range=[0.00, 0.30])  # Y-Achsenbereich festlegen
+        )
+
+        # Anzeige der Graphik in Streamlit
+        st.plotly_chart(fig_RFR)
+
+        # GRAPHIC XGBR
+        # Daten für die Features und ihre Wichtigkeit
+        features = ["64 Rue de Rivoli", "38 Rue Turbigo", "73 Boulevard de Sébastopol"]
+        importance = [0.125025, 0.095337, 0.089949]
+        # Erstellen der Plotly Barplot
+        fig_XGB = go.Figure(data=[go.Bar(
+            x=features,
+            y=importance,
+            marker_color='royalblue'
+        )])
+        # Titel und Achsenbeschriftungen hinzufügen
+        fig_XGB.update_layout(
+            title="Top 3 features of XGBRegressor",
+            xaxis_title="Feature",
+            yaxis_title="Importance",
+            yaxis=dict(range=[0.00, 0.126])  # Y-Achsenbereich festlegen
+        )
+        # Anzeige der Graphik in Streamlit
+        st.plotly_chart(fig_XGB)
+        
     if col2.button("Peak Hour Analysis"):
         # Use st.cache_data for data preprocessing
         @st.cache_data
@@ -814,22 +850,26 @@ if page == pages[3] :
             # Feature Importance Plot for Random Forest
             if st.session_state.rf_model is not None and hasattr(st.session_state.rf_model, "feature_importances_"):
                 feature_importance = st.session_state.rf_model.feature_importances_
+                
                 importance_df = pd.DataFrame({
                     'Feature': st.session_state.X_test.columns,
                     'Importance': feature_importance
-                }).sort_values(by='Importance', ascending=True)  # Ascending for horizontal plot
-
+                }).sort_values(by='Importance', ascending=False)  # Sort by descending importance
+            
+                # Keep top 5 features
+                top_features_df = importance_df.head(5).sort_values(by='Importance', ascending=True)  # Re-sort for horizontal bar
+            
                 # Plot using Plotly
                 fig_importance = px.bar(
-                    importance_df,
+                    top_features_df,
                     x='Importance',
                     y='Feature',
                     orientation='h',
-                    title='🔍 Feature Importance in Random Forest',
+                    title='🔍 Top 5 Feature Importances in Random Forest',
                     labels={'Importance': 'Feature Importance', 'Feature': 'Feature'},
-                    height=500
+                    height=400
                 )
-
+            
                 st.plotly_chart(fig_importance, use_container_width=True)
 
 if page == pages[4] :
