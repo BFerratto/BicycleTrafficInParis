@@ -723,7 +723,6 @@ if page == pages[3] :
         # Hugging Face URLs
         lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
         rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model_light.joblib"
-        full_rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model.joblib"
         test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
 
         # Load function
@@ -752,7 +751,7 @@ if page == pages[3] :
         """, unsafe_allow_html=True)
 
         # Model + data loading buttons
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
             if st.button("Load Light Random Forest Model", key="load_light_rf"):
@@ -760,17 +759,11 @@ if page == pages[3] :
                     st.session_state.rf_model = load_joblib_from_url(rf_url)
 
         with col2:
-            if st.button("Full Random Forest Model ( ⚠️local only)", key="load_full_rf"):
-                with st.spinner("Loading Full Random Forest model..."):
-                    st.session_state.rf_model = load_joblib_from_url(full_rf_url)
-                st.success("Full Random Forest model loaded!")
-
-        with col3:
             if st.button("Load Linear Regression", key="load_lr"):
                 with st.spinner("Loading Linear Regression model..."):
                     st.session_state.lr_model = load_joblib_from_url(lr_url)
 
-        with col4:
+        with col3:
             if st.button("Load Test Data", key="load_test_data"):
                 with st.spinner("Loading test data..."):
                     X_test, y_test = load_joblib_from_url(test_data_url)
