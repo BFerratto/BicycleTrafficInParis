@@ -720,7 +720,7 @@ if page == pages[3] :
         """)
         st.write("##### Results")
 
-        # Hugging Face URLs
+        #---START Hugging Face URLs
         lr_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/lr_model.joblib"
         rf_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/rf_model_light.joblib"
         test_data_url = "https://huggingface.co/BFerratto/bicycle-models/resolve/main/test_data.joblib"
@@ -750,6 +750,7 @@ if page == pages[3] :
             </style>
         """, unsafe_allow_html=True)
 
+
         # Model + data loading buttons
         col1, col2, col3 = st.columns(3)
     
@@ -770,14 +771,59 @@ if page == pages[3] :
                     X_test, y_test = load_joblib_from_url(test_data_url)
                     st.session_state.X_test = X_test
                     st.session_state.y_test = y_test
-        #DEBUG            
-        import requests
-
-        r = requests.get(test_data_url)
-        print(r.status_code)
-        print(r.text[:200])
-        #----
-        
+        #-------END HUGGING FACE
+        ##-GOOGLE DRIVE START
+        #@st.cache_data
+        #def load_joblib_from_gdrive(file_id, filename):
+        #    url = f"https://drive.google.com/uc?id={file_id}"
+        #    gdown.download(url, filename, quiet=False)
+        #    return joblib.load(filename)
+        #
+        ## Define your files
+        #files = {
+        #    "Linear Regression": ("1k1YZl1qLCeO2w_tA-aVLS7Xwd3goXsWZ", "lr_model.joblib"),
+        #    "Random Forest": ("1sTN6x4q_Nsbkz2w2nJ6lkQtF3WA6BK9_", "rf_model.joblib"),
+        #    "Test Data": ("1sFhQYmZ3-NtTf6S_WWn3GU44zCr9gWbR", "test_data.joblib"),
+        #}
+        #
+        ## Initialize session state
+        #for key in ["rf_model", "lr_model", "X_test", "y_test"]:
+        #    if key not in st.session_state:
+        #        st.session_state[key] = None
+        #
+        ## Red button style for Full RF model
+        #st.markdown("""
+        #<style>
+        #div.stButton > button[data-testid="baseButton"][key="load_light_rf"] {
+        #    background-color: red !important;
+        #    color: white !important;
+        #}
+        #</style>
+        #""", unsafe_allow_html=True)
+        #
+        ## Buttons for loading
+        #col1, col2, col3 = st.columns(3)
+        #
+        #with col1:
+        #    if st.button("Load Random Forest", key="load_light_rf"):
+        #        with st.spinner("Loading Random Forest model..."):
+        #            st.session_state.rf_model = load_joblib_from_gdrive(*files["Random Forest"])
+        #        st.success("Random Forest model loaded!")
+        #
+        #with col2:
+        #    if st.button("Load Linear Regression", key="load_lr"):
+        #        with st.spinner("Loading Linear Regression model..."):
+        #            st.session_state.lr_model = load_joblib_from_gdrive(*files["Linear Regression"])
+        #        st.success("Linear Regression model loaded!")
+        #
+        #with col3:
+        #    if st.button("Load Test Data", key="load_test_data"):
+        #        with st.spinner("Loading test data..."):
+        #            X_test, y_test = load_joblib_from_gdrive(*files["Test Data"])
+        #            st.session_state.X_test = X_test
+        #            st.session_state.y_test = y_test
+        #        st.success("Test data loaded!")
+        ##---GOOGLE DRIVE END
         
         # Run predictions and show results if all components are loaded
         if all([
@@ -828,8 +874,8 @@ if page == pages[3] :
                 "Linear Regression": y_pred_lr
             })
             color_map = {
-                "Random Forest": "limegreen",  # bright green
-                "Linear Regression": "steelblue"  # muted blue
+                "Random Forest": "#076007",  # intense green
+                "Linear Regression": "#8bb0d1"  # muted blue
             }
 
             df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")
