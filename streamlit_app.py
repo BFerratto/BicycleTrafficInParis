@@ -752,7 +752,8 @@ if page == pages[3] :
 
         # Model + data loading buttons
         col1, col2, col3 = st.columns(3)
-
+    
+    
         with col1:
             if st.button("Load Light Random Forest Model", key="load_light_rf"):
                 with st.spinner("Loading Light Random Forest model..."):
@@ -769,7 +770,15 @@ if page == pages[3] :
                     X_test, y_test = load_joblib_from_url(test_data_url)
                     st.session_state.X_test = X_test
                     st.session_state.y_test = y_test
+        #DEBUG            
+        import requests
 
+        r = requests.get(test_data_url)
+        print(r.status_code)
+        print(r.text[:200])
+        #----
+        
+        
         # Run predictions and show results if all components are loaded
         if all([
             st.session_state.rf_model,
@@ -818,6 +827,11 @@ if page == pages[3] :
                 "Random Forest": y_pred_rf,
                 "Linear Regression": y_pred_lr
             })
+            color_map = {
+                "Random Forest": "limegreen",  # bright green
+                "Linear Regression": "steelblue"  # muted blue
+            }
+
             df_melted = df_plot.melt(id_vars="Actual", var_name="Model", value_name="Predicted")
 
             fig = px.scatter(
@@ -825,12 +839,15 @@ if page == pages[3] :
                 x="Actual",
                 y="Predicted",
                 color="Model",
+                color_discrete_map=color_map,  # custom colors
                 opacity=0.6,
                 labels={"Actual": "Actual Values", "Predicted": "Predicted Values"},
                 title="Actual vs. Predicted Values"
             )
+
             min_val = df_melted["Actual"].min()
             max_val = df_melted["Actual"].max()
+
             fig.add_trace(
                 go.Scatter(
                     x=[min_val, max_val],
@@ -840,7 +857,8 @@ if page == pages[3] :
                     name="Perfect Fit"
                 )
             )
-            st.plotly_chart(fig, use_container_width=True)  
+
+            st.plotly_chart(fig, use_container_width=True)
             st.markdown("""
             **Feature Importance:**  
             - `hourly_count`, hour of day, and coordinates were most influential.
@@ -875,28 +893,51 @@ if page == pages[4] :
     st.markdown("""
         ### 🧐 **Conclusion & Key Recommendations**  
                 
-        The analysis of bicycle usage in Paris reveals clear temporal and seasonal patterns. Cycling activity is notably higher during weekdays, particularly during commuting hours, indicating that many residents rely on bicycles as a mode of transport to and from work. Additionally, warmer months show significantly increased activity, underscoring the influence of weather conditions on cycling behavior.
-        The installation dates of bicycle counters (meters) provide valuable context for interpreting usage trends over time. They also help city planners schedule timely maintenance and evaluate the effectiveness of past infrastructure investments. This information is crucial for optimizing both current and future developments in the city's cycling network.
+        **Analysis of Bicycle Usage in Paris**
+        
+        - Clear temporal and seasonal patterns observed.
+        - Higher cycling activity during weekdays and commuting hours → bicycles are a key transport mode.
+        - Warmer months boost cycling → weather strongly influences behavior.
+        - Installation dates of meters help interpret trends, plan maintenance, and evaluate infrastructure investments.
+        
+        **Insights from Machine Learning Models**
+        
+        Machine learning supported three main tasks:
+        
+        - **Hourly Count Prediction:**
+            - Random Forest (best R²=0.87);
+            - Captured time, day, and season patterns.
+            
+        - **Peak Hour Classification:**
+            - Decision Tree (83% accuracy) identified non-peak hours well; 
+            - Peak-hour detection was more difficult.
+            
+        - **Directional Flow Difference Prediction:**
+            - Random Forest (R²=0.77) outperformed Linear Regression (R²=0.40;
+            - Key features: total count, hour, location coordinates.
+            - Provides insight into traffic imbalances for better infrastructure planning.
+
+        These findings support data-driven decisions in infrastructure planning and policy-making.
         
         **Key Recommendations:**        
 
         - ✅ **Optimize Infrastructure Deployment Seasonally:**
+            Prioritize installations and maintenance in early spring for peak summer usage.
         
-            Prioritize the installation and maintenance of bike infrastructure in early spring to ensure readiness for peak usage in warmer months.
         - ✅ **Focus on Commuting Corridors:**
+            Expand and enhance lanes on key weekday commuting routes, especially during rush hours.
         
-            Invest in expanding and enhancing bike lanes along major commuting routes that show high weekday traffic, particularly during morning and evening rush hours.
         - ✅ **Dynamic Resource Allocation:**
+            Use real-time and historical data plus ML predictions to allocate resources (bike-sharing stations, maintenance crews) dynamically.
         
-            Use real-time and historical meter data to dynamically allocate resources—such as bike-sharing stations and maintenance crews—where and when demand is highest.
+        - ✅ Integrate Directional Flow Insights
+            Detect traffic imbalances to inform lane design, signage, or time-based interventions.
+            
         - ✅ **Integrate Weather Forecasting into Planning:**
-        
-            Consider integrating weather predictions into traffic management and promotional campaigns to encourage safe and increased cycling on favorable days.
+            Include weather predictions in traffic management and promotional strategies.
+            
         - ✅ **Public Awareness & Incentives:**
-        
-            Launch campaigns to raise awareness of cycling benefits and offer seasonal incentives (e.g., discounts or competitions) to maintain ridership during shoulder seasons.
-        
-        By leveraging these insights, Paris can continue to foster a more sustainable and cyclist-friendly urban environment, enhancing both mobility and quality of life for its residents.
+            Promote cycling benefits and offer seasonal incentives to boost ridership during off-peak seasons.
     """)
 
     
